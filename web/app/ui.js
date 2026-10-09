@@ -439,14 +439,15 @@
       <div class="progress ruler"><span style="width:${pct(R.pos, R.queue.length)}%"></span></div>`;
     if (!it) return head + finishView();
     if (it.s !== "learn" && (!EX || EX._pos !== R.pos)) { EX = J.makeEx(it.m, it.id, it.s === "fix" ? "rev" : it.s, it.kind); EX._pos = R.pos; }
-    const tag = `<div class="ex-tag"><span class="pill mod-${it.m}"><span class="jp">${MODS[it.m].jp}</span> ${MODS[it.m].fr}</span><span class="pill stage-${it.s}">${STAGE_FR[it.s]}</span>${it.s !== "learn" && EX ? `<span class="muted">${esc(EX.label)}</span>` : ""}${it.m !== "g" && !it.free ? `<button class="link small ex-out" data-act="exclude-cur" title="Retirer des leçons">Pas du N1 ✕</button>` : ""}</div>`;
+    const tag = `<div class="ex-tag"><span class="pill mod-${it.m}"><span class="jp">${MODS[it.m].jp}</span> ${MODS[it.m].fr}</span><span class="pill stage-${it.s}">${STAGE_FR[it.s]}</span>${it.s !== "learn" && EX ? `<span class="muted">${esc(EX.label)}</span>` : ""}</div>`;
+    const aside = it.m !== "g" && !it.free ? `<div class="ex-aside"><button data-act="exclude-cur">Ce ${it.m === "v" ? "mot" : "kanji"} n’est pas du niveau N1 ? Le retirer des leçons</button></div>` : "";
     if (it.s === "learn") {
       if (!R.learnT0 || R.learnPos !== R.pos) { R.learnT0 = Date.now(); R.learnPos = R.pos; }
       return head + `<section class="card ex">${`<div class="ex-tag"><span class="pill mod-${it.m}"><span class="jp">${MODS[it.m].jp}</span> ${MODS[it.m].fr}</span><span class="pill stage-learn">Nouveau</span></div>`}
         ${J.learnCard(it.m, it.id)}
-        <div class="row end">${it.m !== "g" ? `<button class="link" data-act="exclude-cur" title="Retirer ce ${it.m === "v" ? "mot" : "kanji"} des leçons">Pas du N1 ✕</button>` : ""}<button class="btn" data-act="learn-known">Déjà connu</button><button class="btn primary" data-act="learn-next" autofocus>J’ai compris → Suivant <kbd>↵</kbd></button></div></section>`;
+        <div class="row end"><button class="btn" data-act="learn-known">Déjà connu</button><button class="btn primary" data-act="learn-next" autofocus>J’ai compris → Suivant <kbd>↵</kbd></button></div></section>${aside}`;
     }
-    return head + `<section class="card ex">${tag}${exBody(EX)}</section>`;
+    return head + `<section class="card ex">${tag}${exBody(EX)}</section>${aside}`;
   };
 
   function exBody(ex) {

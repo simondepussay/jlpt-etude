@@ -475,5 +475,6 @@ table.plan td { font: 700 1rem var(--jp); }
   .sc-slot { height: 48px; }
   .sc-wd small { display: none; }
 }
-.ex-out { margin-left: auto; font-size: .76rem; color: var(--muted); text-decoration-color: var(--rule); }
-.ex-out:hover { color: var(--shu); }
+.ex-aside { text-align: right; margin-top: -8px; }
+.ex-aside button { background: none; border: 0; padding: 4px 0; font-size: .74rem; color: var(--muted); opacity: .75; }
+.ex-aside button:hover { color: var(--shu); opacity: 1; text-decoration: underline; }
