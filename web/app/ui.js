@@ -197,7 +197,7 @@
       <div class="sc-grid">${days.map((d) => {
         const x = J.S.days[d], min = x ? Math.round(x.sec / 60) : 0, today = d === J.today();
         return `<div class="sc-cell ${today ? "today" : ""}"><span class="sc-wd">${WEEKDAY[J.parse(d).getDay()]}<small>${J.parse(d).getDate()}</small></span>
-          <span class="sc-slot">${J.studied(d) ? stamp("済", d) : ""}</span><span class="sc-min">${min ? min + " min" : ""}</span></div>`;
+          <span class="sc-slot">${x && x.done ? stamp("済", d) : J.studied(d) ? stamp("途中", d, "grey") : ""}</span><span class="sc-min">${min ? min + " min" : ""}</span></div>`;
       }).join("")}</div></section>`;
   }
 

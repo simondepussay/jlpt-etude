@@ -1,12 +1,46 @@
 {
-  "platform": { "apiRuntime": "node:20" },
+  "platform": {
+    "apiRuntime": "node:20"
+  },
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/app/*", "/data/*", "/*.html", "/*.json", "/api/*"]
+    "exclude": [
+      "/app/*",
+      "/data/*",
+      "/*.html",
+      "/*.json",
+      "/api/*"
+    ]
   },
   "routes": [
-    { "route": "/.auth/*", "statusCode": 404 },
-    { "route": "/data/*", "headers": { "Cache-Control": "public, max-age=3600" } }
+    {
+      "route": "/.auth/*",
+      "statusCode": 404
+    },
+    {
+      "route": "/app/*",
+      "headers": {
+        "Cache-Control": "no-cache"
+      }
+    },
+    {
+      "route": "/data/*",
+      "headers": {
+        "Cache-Control": "no-cache"
+      }
+    },
+    {
+      "route": "/*.html",
+      "headers": {
+        "Cache-Control": "no-cache"
+      }
+    },
+    {
+      "route": "/",
+      "headers": {
+        "Cache-Control": "no-cache"
+      }
+    }
   ],
   "globalHeaders": {
     "Content-Security-Policy": "default-src 'self'; script-src 'self' https://accounts.google.com/gsi/client https://appleid.cdn-apple.com; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; frame-src https://accounts.google.com https://appleid.apple.com; connect-src 'self' https://accounts.google.com/gsi/ https://appleid.apple.com; img-src 'self' data: https://*.googleusercontent.com; font-src 'self' https://fonts.gstatic.com; base-uri 'self'; form-action 'self' https://appleid.apple.com; frame-ancestors 'none'",
@@ -14,5 +48,7 @@
     "Referrer-Policy": "strict-origin-when-cross-origin",
     "Permissions-Policy": "camera=(), microphone=(), geolocation=()"
   },
-  "mimeTypes": { ".json": "application/json" }
+  "mimeTypes": {
+    ".json": "application/json"
+  }
 }
