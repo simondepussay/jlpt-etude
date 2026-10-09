@@ -478,3 +478,9 @@ table.plan td { font: 700 1rem var(--jp); }
 .ex-aside { text-align: right; margin-top: -8px; }
 .ex-aside button { background: none; border: 0; padding: 4px 0; font-size: .74rem; color: var(--muted); opacity: .75; }
 .ex-aside button:hover { color: var(--shu); opacity: 1; text-decoration: underline; }
+
+/* Sélecteur de langue */
+.lang { display: inline-flex; border: 1.5px solid var(--ink); background: var(--sheet); box-shadow: var(--press-sm); flex: none; }
+.lang button { border: 0; background: none; padding: 4px 9px; font: 700 .72rem var(--ui); letter-spacing: .08em; color: var(--muted); }
+.lang button.on { background: var(--ink); color: var(--sheet); }
+@media (max-width: 760px) { .lang { order: 2; } }

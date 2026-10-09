@@ -1,7 +1,8 @@
-/* JLPT Étude — interface. */
+/* JLPT Étude — interface (français / anglais ; le japonais reste toujours affiché). */
 (function () {
   const J = window.J;
   const { esc, MODS, MOD_ORDER } = J;
+  const L = (fr, en) => J.L(fr, en);
   const app = document.getElementById("app");
   let view = { name: "home", p: {} };
   let R = null;   // session en cours (leçon ou entraînement)
@@ -17,6 +18,7 @@
   /* ───────── Rendu principal ───────── */
   function render() {
     clearInterval(tick);
+    document.documentElement.lang = J.lang();
     if (!J.S.onboarded && view.name !== "onboarding" && view.name !== "account") view = { name: "onboarding", p: {} };
     const inRun = view.name === "run";
     app.innerHTML = (inRun ? "" : nav()) + `<main class="${inRun ? "run" : ""}">${VIEWS[view.name](view.p)}</main>`;
@@ -29,20 +31,24 @@
   }
   J.render = render;
 
+  const langSwitch = () => `<div class="lang" role="group" aria-label="Langue / Language">
+    <button class="${J.lang() === "fr" ? "on" : ""}" data-act="set-lang" data-l="fr">FR</button><button class="${J.lang() === "en" ? "on" : ""}" data-act="set-lang" data-l="en">EN</button></div>`;
+
   function nav() {
-    const tabs = [["home", "今日", "Aujourd’hui"], ["mod-v", "語彙", "Vocabulaire"], ["mod-k", "漢字", "Kanji"], ["mod-g", "文法", "Grammaire"], ["progress", "進捗", "Progression"], ["settings", "設定", "Réglages"]];
+    const tabs = [["home", "今日", L("Aujourd’hui", "Today")], ["mod-v", "語彙", J.modName("v")], ["mod-k", "漢字", J.modName("k")], ["mod-g", "文法", J.modName("g")], ["progress", "進捗", L("Progression", "Progress")], ["settings", "設定", L("Réglages", "Settings")]];
     const cur = view.name === "mod" ? "mod-" + view.p.m : view.name === "item" ? "mod-" + view.p.m : view.name;
     const u = J.user(), bad = J.store.status === "error" || J.store.status === "offline" || J.store.expired;
     const st = u
-      ? `<button class="save ${bad ? "err" : "ok"} ${cur === "account" ? "on" : ""}" data-act="nav" data-v="account" title="${esc(J.store.error || "Progression synchronisée sur ton compte")}">${bad ? "⚠︎" : "●"} ${esc(u.name || u.email || "Mon compte")}</button>`
-      : `<button class="save warn ${cur === "account" ? "on" : ""}" data-act="nav" data-v="account" title="Sans compte, la progression reste dans ce navigateur">Se connecter</button>`;
+      ? `<button class="save ${bad ? "err" : "ok"} ${cur === "account" ? "on" : ""}" data-act="nav" data-v="account" title="${esc(J.store.error || L("Progression synchronisée sur ton compte", "Progress synced to your account"))}">${bad ? "⚠︎" : "●"} ${esc(u.name || u.email || L("Mon compte", "My account"))}</button>`
+      : `<button class="save warn ${cur === "account" ? "on" : ""}" data-act="nav" data-v="account" title="${L("Sans compte, la progression reste dans ce navigateur", "Without an account, progress stays in this browser")}">${L("Se connecter", "Sign in")}</button>`;
     return `<header class="top"><div class="brand"><span class="hanko" aria-hidden="true">日本<br>語</span><span class="brand-t">JLPT Étude<b>${J.LEVEL}</b></span></div>
-      <nav>${tabs.map(([v, jp, fr]) => `<button class="tab ${cur === v ? "on" : ""}" data-act="nav" data-v="${v}"><span class="jp">${jp}</span><span class="tfr">${fr}</span></button>`).join("")}</nav>${st}</header>`;
+      <nav>${tabs.map(([v, jp, tr]) => `<button class="tab ${cur === v ? "on" : ""}" data-act="nav" data-v="${v}"><span class="jp">${jp}</span><span class="tfr">${tr}</span></button>`).join("")}</nav>${langSwitch()}${st}</header>`;
   }
 
   const fmtClock = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
   const fmtMin = (m) => (m >= 60 ? `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, "0")}` : `${m} min`);
   const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
+  const dpw = () => L("j/sem", "days/wk");
   const bar = (levels, total) =>
     `<div class="lvbar">${[3, 2, 1].map((l) => `<span class="lv${l}" style="width:${(levels[l] / total) * 100}%"></span>`).join("")}</div>`;
 
@@ -54,44 +60,52 @@
     const s = J.S.settings, sessions = J.jlptSessions(4);
     const plan = J.plan();
     return `<section class="card onboard">
-      <h1>ようこそ <small>Bienvenue</small></h1>
-      <p>Chaque jour, l’appli te prépare une petite leçon : <b>réviser</b> ce qui est dû, <b>apprendre</b> de nouveaux éléments, puis <b>te tester</b>. Ce que tu rates revient à la fin de la leçon.</p>
+      <h1>ようこそ <small>${L("Bienvenue", "Welcome")}</small></h1>
+      <div class="field"><label>${L("Langue de l’interface et des traductions", "Language of the interface and translations")}</label>${langSwitch()}</div>
+      <p>${L("Chaque jour, l’appli te prépare une petite leçon : <b>réviser</b> ce qui est dû, <b>apprendre</b> de nouveaux éléments, puis <b>te tester</b>. Ce que tu rates revient à la fin de la leçon.",
+        "Every day, the app prepares a short lesson for you: <b>review</b> what is due, <b>learn</b> new items, then <b>test yourself</b>. Whatever you miss comes back at the end of the lesson.")}</p>
       ${settingsCore(s, sessions)}
       <div class="preview">
-        <h3>Ton planning de départ</h3>
+        <h3>${L("Ton planning de départ", "Your starting plan")}</h3>
         ${planTable(plan, true)}
         <p class="muted">${planNote(plan)}</p>
       </div>
-      <p class="muted">Tu connais déjà une partie du N1 ? Pendant les leçons, le bouton <b>« Déjà connu »</b> permet de passer vite ce que tu sais déjà.</p>
-      <div class="row"><button class="btn primary big" data-act="finish-onboard">Commencer</button>
-      ${J.authReady ? `<button class="link" data-act="nav" data-v="account">J’ai déjà un compte : me connecter</button>` : ""}</div>
+      <p class="muted">${L("Tu connais déjà une partie du N1 ? Pendant les leçons, le bouton <b>« Déjà connu »</b> permet de passer vite ce que tu sais déjà.",
+        "Already know part of N1? During lessons, the <b>“Already known”</b> button lets you skip what you already know.")}</p>
+      <div class="row"><button class="btn primary big" data-act="finish-onboard">${L("Commencer", "Start")}</button>
+      ${J.authReady ? `<button class="link" data-act="nav" data-v="account">${L("J’ai déjà un compte : me connecter", "I already have an account: sign in")}</button>` : ""}</div>
     </section>`;
   };
 
   function settingsCore(s, sessions) {
     const isCustom = !sessions.includes(s.examDate);
-    return `<div class="field"><label>Ma session JLPT ${J.LEVEL}</label>
+    return `<div class="field"><label>${L("Ma session JLPT", "My JLPT session")} ${J.LEVEL}</label>
         <div class="seg wrap">${sessions.map((d) => `<button class="${s.examDate === d ? "on" : ""}" data-act="set-exam" data-d="${d}">${J.fmtDate(d)}</button>`).join("")}
-        <label class="seg-date ${isCustom ? "on" : ""}">Autre date <input type="date" data-set="examDate" value="${s.examDate}"></label></div></div>
-      <div class="field"><label>Jours d’étude prévus par semaine</label>
+        <label class="seg-date ${isCustom ? "on" : ""}">${L("Autre date", "Other date")} <input type="date" data-set="examDate" value="${s.examDate}"></label></div></div>
+      <div class="field"><label>${L("Jours d’étude prévus par semaine", "Planned study days per week")}</label>
         <div class="seg">${[1, 2, 3, 4, 5, 6, 7].map((n) => `<button class="${s.daysPerWeek === n ? "on" : ""}" data-act="set-dpw" data-n="${n}">${n}</button>`).join("")}</div></div>
-      <div class="field"><label>Temps maximum par jour d’étude</label>
-        <div class="seg wrap">${[15, 20, 30, 45, 60, 90, 120, 0].map((n) => `<button class="${s.maxMinutes === n ? "on" : ""}" data-act="set-max" data-n="${n}">${n ? fmtMin(n) : "Sans limite"}</button>`).join("")}</div></div>`;
+      <div class="field"><label>${L("Temps maximum par jour d’étude", "Maximum time per study day")}</label>
+        <div class="seg wrap">${[15, 20, 30, 45, 60, 90, 120, 0].map((n) => `<button class="${s.maxMinutes === n ? "on" : ""}" data-act="set-max" data-n="${n}">${n ? fmtMin(n) : L("Sans limite", "No limit")}</button>`).join("")}</div></div>`;
   }
 
   function planTable(plan, onlyNew) {
-    return `<table class="plan"><thead><tr><th></th>${onlyNew ? "<th>Nouveaux / jour</th><th>Restants</th>" : "<th>Réviser</th><th>Apprendre</th><th>Tester</th>"}</tr></thead><tbody>
-      ${MOD_ORDER.map((m) => { const p = plan.mods[m]; return `<tr><th><span class="jp">${MODS[m].jp}</span> ${MODS[m].fr}</th>${onlyNew ? `<td>${p.new}${p.new < p.needed ? ` <small class="bad">/ ${p.needed} nécessaires</small>` : ""}</td><td>${p.remaining}</td>` : `<td>${p.due}</td><td>${p.newLeft}</td><td>${p.test}</td>`}</tr>`; }).join("")}
+    const head = onlyNew ? `<th>${L("Nouveaux / jour", "New / day")}</th><th>${L("Restants", "Remaining")}</th>`
+      : `<th>${L("Réviser", "Review")}</th><th>${L("Apprendre", "Learn")}</th><th>${L("Tester", "Test")}</th>`;
+    return `<table class="plan"><thead><tr><th></th>${head}</tr></thead><tbody>
+      ${MOD_ORDER.map((m) => { const p = plan.mods[m]; return `<tr><th><span class="jp">${MODS[m].jp}</span> ${J.modName(m)}</th>${onlyNew ? `<td>${p.new}${p.new < p.needed ? ` <small class="bad">/ ${p.needed} ${L("nécessaires", "needed")}</small>` : ""}</td><td>${p.remaining}</td>` : `<td>${p.due}</td><td>${p.newLeft}</td><td>${p.test}</td>`}</tr>`; }).join("")}
       </tbody></table>`;
   }
   function planNote(plan) {
-    if (plan.finalPhase) return `Il reste moins de ${J.S.settings.finalWeeks} semaine(s) avant l’examen : plus de nouveaux éléments, uniquement révisions et tests.`;
-    let t = `${plan.studyDays} jours d’étude d’ici le ${J.fmtDate(plan.target)} (tu gardes ${J.S.settings.finalWeeks} semaines de révision finale avant l’examen). Durée estimée d’une leçon : <b>${fmtMin(plan.minutes)}</b>.`;
-    if (plan.capped) t += ` <br><span class="bad">Pour tout voir à temps, il faudrait environ ${fmtMin(plan.fullMinutes)} par jour d’étude : avec ton maximum, tu seras en retard. Augmente le temps ou les jours, ou choisis une session plus tardive.</span>`;
+    const fw = J.S.settings.finalWeeks;
+    if (plan.finalPhase) return L(`Il reste moins de ${fw} semaine(s) avant l’examen : plus de nouveaux éléments, uniquement révisions et tests.`,
+      `Less than ${fw} week(s) left before the exam: no more new items, only reviews and tests.`);
+    let t = L(`${plan.studyDays} jours d’étude d’ici le ${J.fmtDate(plan.target)} (tu gardes ${fw} semaines de révision finale avant l’examen). Durée estimée d’une leçon : <b>${fmtMin(plan.minutes)}</b>.`,
+      `${plan.studyDays} study days until ${J.fmtDate(plan.target)} (you keep ${fw} weeks of final review before the exam). Estimated lesson length: <b>${fmtMin(plan.minutes)}</b>.`);
+    if (plan.capped) t += ` <br><span class="bad">${L(`Pour tout voir à temps, il faudrait environ ${fmtMin(plan.fullMinutes)} par jour d’étude : avec ton maximum, tu seras en retard. Augmente le temps ou les jours, ou choisis une session plus tardive.`,
+      `To cover everything in time you would need about ${fmtMin(plan.fullMinutes)} per study day: with your maximum, you will fall behind. Increase the time or the days, or pick a later session.`)}</span>`;
     return t;
   }
 
-  /* Accueil */
   /* ───────── Formes dessinées (SVG) ───────── */
   // Ensō : cercle au pinceau ; part = fraction tracée (0–1)
   const enso = (part, inner) => {
@@ -112,8 +126,8 @@
   /* Accueil */
   VIEWS.home = () => {
     const plan = J.plan(), proj = J.projection(), warn = J.paceWarning();
-    const L = J.S.lesson && J.S.lesson.date === J.today() ? J.S.lesson : null;
-    const done = L && L.pos >= L.queue.length;
+    const Ls = J.S.lesson && J.S.lesson.date === J.today() ? J.S.lesson : null;
+    const done = Ls && Ls.pos >= Ls.queue.length;
     const now = new Date();
     const himekuri = `<div class="himekuri" aria-label="${J.fmtDate(J.today())}">
         <div class="hm-rings"><i></i><i></i></div>
@@ -127,62 +141,64 @@
     if (done) {
       sheet = `<div class="sheet lesson done">
         <div class="sheet-side">今日の勉強</div>
-        ${enso(1, `<b>${fmtMin(Math.round(J.day().sec / 60)).replace(" min", "")}</b><span>分</span>`)}
-        <div class="lesson-body"><h2 class="hand">おつかれさま！<small>Leçon du jour terminée</small></h2>
-          <p>${L.ok} bonnes réponses · ${L.ko} erreurs.</p>
-          <p class="muted">Demain : environ ${J.MOD_ORDER.reduce((a, m) => a + J.dueList(m, J.addDays(J.today(), 1)).length, 0)} révisions prévues.</p>
-          <div class="row"><button class="btn" data-act="exam-start">Petit test</button><button class="btn" data-act="nav" data-v="mod-g">Revoir la grammaire</button></div></div>
+        ${enso(1, `<b>${Math.round(J.day().sec / 60)}</b><span>分</span>`)}
+        <div class="lesson-body"><h2 class="hand">おつかれさま！<small>${L("Leçon du jour terminée", "Today’s lesson done")}</small></h2>
+          <p>${L(`${Ls.ok} bonnes réponses · ${Ls.ko} erreurs.`, `${Ls.ok} correct · ${Ls.ko} mistakes.`)}</p>
+          <p class="muted">${L("Demain : environ", "Tomorrow: about")} ${J.MOD_ORDER.reduce((a, m) => a + J.dueList(m, J.addDays(J.today(), 1)).length, 0)} ${L("révisions prévues.", "reviews planned.")}</p>
+          <div class="row"><button class="btn" data-act="exam-start">${L("Petit test", "Quick test")}</button><button class="btn" data-act="nav" data-v="mod-g">${L("Revoir la grammaire", "Review grammar")}</button></div></div>
         ${stamp("済", J.today(), "big")}</div>`;
-    } else if (L) {
-      const left = L.queue.slice(L.pos).filter((i) => !i.skip);
+    } else if (Ls) {
+      const left = Ls.queue.slice(Ls.pos).filter((i) => !i.skip);
       const cnt = (s) => left.filter((i) => i.s === s).length;
       sheet = `<div class="sheet lesson">
         <div class="sheet-side">今日の勉強</div>
-        ${enso(L.pos / L.queue.length, `<b>${pct(L.pos, L.queue.length)}</b><span>%</span>`)}
-        <div class="lesson-body"><h2 class="hand">つづき<small>Leçon en cours</small></h2>
-          <ol class="timetable">${ttRow("復習", "Réviser", cnt("rev"))}${ttRow("新出", "Apprendre", cnt("learn"))}${ttRow("小テスト", "Tester", cnt("test"))}${ttRow("やり直し", "Rattrapage", cnt("fix"))}</ol>
-          <button class="btn primary big" data-act="lesson-start" autofocus>Reprendre <span class="jp">→</span></button></div></div>`;
+        ${enso(Ls.pos / Ls.queue.length, `<b>${pct(Ls.pos, Ls.queue.length)}</b><span>%</span>`)}
+        <div class="lesson-body"><h2 class="hand">つづき<small>${L("Leçon en cours", "Lesson in progress")}</small></h2>
+          <ol class="timetable">${ttRow("復習", L("Réviser", "Review"), cnt("rev"))}${ttRow("新出", L("Apprendre", "Learn"), cnt("learn"))}${ttRow("小テスト", L("Tester", "Test"), cnt("test"))}${ttRow("やり直し", L("Rattrapage", "Retry"), cnt("fix"))}</ol>
+          <button class="btn primary big" data-act="lesson-start" autofocus>${L("Reprendre", "Resume")} <span class="jp">→</span></button></div></div>`;
     } else {
       const sum = (k) => MOD_ORDER.reduce((a, m) => a + plan.mods[m][k], 0);
       const total = sum("due") + sum("newLeft") + sum("test");
       sheet = `<div class="sheet lesson">
         <div class="sheet-side">今日の勉強</div>
         ${enso(Math.min(1, plan.minutes / Math.max(15, J.S.settings.maxMinutes || 60)), `<b>${plan.minutes}</b><span>分</span>`)}
-        <div class="lesson-body"><h2 class="hand">今日のレッスン<small>Leçon du jour · environ ${fmtMin(plan.minutes)}</small></h2>
+        <div class="lesson-body"><h2 class="hand">今日のレッスン<small>${L("Leçon du jour · environ", "Today’s lesson · about")} ${fmtMin(plan.minutes)}</small></h2>
           <ol class="timetable">
-            ${ttRow("復習", "Réviser", sum("due"), MOD_ORDER.map((m) => plan.mods[m].due))}
-            ${ttRow("新出", "Apprendre", sum("newLeft"), MOD_ORDER.map((m) => plan.mods[m].newLeft))}
-            ${ttRow("小テスト", "Tester", sum("test"), MOD_ORDER.map((m) => plan.mods[m].test))}
+            ${ttRow("復習", L("Réviser", "Review"), sum("due"), MOD_ORDER.map((m) => plan.mods[m].due))}
+            ${ttRow("新出", L("Apprendre", "Learn"), sum("newLeft"), MOD_ORDER.map((m) => plan.mods[m].newLeft))}
+            ${ttRow("小テスト", L("Tester", "Test"), sum("test"), MOD_ORDER.map((m) => plan.mods[m].test))}
           </ol>
-          ${total ? `<button class="btn primary big" data-act="lesson-start" autofocus>はじめる <span>Commencer</span></button>` : `<p>Rien de prévu aujourd’hui.</p><button class="btn" data-act="exam-start">Petit test</button>`}
-          ${plan.capped ? `<p class="muted small">Limitée à ${fmtMin(J.S.settings.maxMinutes)} (ton réglage).</p>` : ""}</div></div>`;
+          ${total ? `<button class="btn primary big" data-act="lesson-start" autofocus>はじめる <span>${L("Commencer", "Start")}</span></button>`
+            : `<p>${L("Rien de prévu aujourd’hui.", "Nothing planned today.")}</p><button class="btn" data-act="exam-start">${L("Petit test", "Quick test")}</button>`}
+          ${plan.capped ? `<p class="muted small">${L(`Limitée à ${fmtMin(J.S.settings.maxMinutes)} (ton réglage).`, `Limited to ${fmtMin(J.S.settings.maxMinutes)} (your setting).`)}</p>` : ""}</div></div>`;
     }
     return `<section class="hero">${himekuri}${sheet}</section>
-      ${warn ? `<div class="sheet alert"><div class="alert-mark">!</div><div><b>Ton rythme réel est différent de ton planning.</b>
-        <p>Tu as prévu <b>${warn.planned} jours</b> d’étude par semaine, mais sur les dernières semaines tu en fais en moyenne <b>${String(warn.measured).replace(".", ",")}</b>. Les leçons sont calculées pour ${warn.planned} jours : en étudiant moins souvent, tu prends du retard.</p>
-        <div class="row"><button class="btn primary" data-act="pace-adapt" data-n="${warn.suggest}">Adapter les leçons à ${warn.suggest} j/sem</button><button class="btn" data-act="pace-keep">Je garde ${warn.planned} j/sem</button></div></div></div>` : ""}
+      ${warn ? `<div class="sheet alert"><div class="alert-mark">!</div><div><b>${L("Ton rythme réel est différent de ton planning.", "Your actual pace differs from your plan.")}</b>
+        <p>${L(`Tu as prévu <b>${warn.planned} jours</b> d’étude par semaine, mais sur les dernières semaines tu en fais en moyenne <b>${J.num(warn.measured)}</b>. Les leçons sont calculées pour ${warn.planned} jours : en étudiant moins souvent, tu prends du retard.`,
+          `You planned <b>${warn.planned} study days</b> a week, but over the last weeks you averaged <b>${J.num(warn.measured)}</b>. Lessons are sized for ${warn.planned} days: studying less often puts you behind.`)}</p>
+        <div class="row"><button class="btn primary" data-act="pace-adapt" data-n="${warn.suggest}">${L(`Adapter les leçons à ${warn.suggest} ${dpw()}`, `Adapt lessons to ${warn.suggest} ${dpw()}`)}</button><button class="btn" data-act="pace-keep">${L(`Je garde ${warn.planned} ${dpw()}`, `Keep ${warn.planned} ${dpw()}`)}</button></div></div></div>` : ""}
       <section class="tickets">${MOD_ORDER.map((m) => modSummary(m, plan, proj)).join("")}</section>
       ${weekStrip()}`;
   };
   // Ligne d’emploi du temps : total + détail par module
-  const ttRow = (jp, fr, n, per) => `<li class="${n ? "" : "off"}"><span class="tt-jp">${jp}</span><span class="tt-fr">${fr}</span>
+  const ttRow = (jp, tr, n, per) => `<li class="${n ? "" : "off"}"><span class="tt-jp">${jp}</span><span class="tt-fr">${tr}</span>
     ${per ? `<span class="tt-per">${per.map((x, i) => (x ? `<i class="m-${MOD_ORDER[i]}">${MODS[MOD_ORDER[i]].jp[0]}${x}</i>` : "")).join("")}</span>` : ""}<b>${n}</b></li>`;
 
   const KANJI_MARK = { v: "語", k: "漢", g: "文" };
   function modSummary(m, plan, proj) {
     const p = plan.mods[m], pr = proj[m];
     let st;
-    if (p.remaining === 0) st = stamp("完了", m + "done", "ok") + `<span class="st-fr">Tout vu</span>`;
-    else if (!pr.finish) st = stamp("未着手", m, "grey") + `<span class="st-fr">Pas commencé</span>`;
-    else if (pr.onTime) st = stamp("順調", m, "ok") + `<span class="st-fr">Dans les temps</span>`;
-    else st = stamp("遅れ", m) + `<span class="st-fr">Retard ≈ ${Math.ceil(pr.late / 7)} sem.</span>`;
+    if (p.remaining === 0) st = stamp("完了", m + "done", "ok") + `<span class="st-fr">${L("Tout vu", "All seen")}</span>`;
+    else if (!pr.finish) st = stamp("未着手", m, "grey") + `<span class="st-fr">${L("Pas commencé", "Not started")}</span>`;
+    else if (pr.onTime) st = stamp("順調", m, "ok") + `<span class="st-fr">${L("Dans les temps", "On track")}</span>`;
+    else st = stamp("遅れ", m) + `<span class="st-fr">${L(`Retard ≈ ${Math.ceil(pr.late / 7)} sem.`, `≈ ${Math.ceil(pr.late / 7)} wk behind`)}</span>`;
     return `<button class="ticket t-${m}" data-act="nav" data-v="mod-${m}">
       <span class="t-stub"><span class="t-kanji">${KANJI_MARK[m]}</span><span class="t-no">No.${m === "v" ? "01" : m === "k" ? "02" : "03"}</span></span>
       <span class="t-body">
-        <span class="t-head"><span class="jp t-jp">${MODS[m].jp}</span><span class="t-fr">${MODS[m].fr}</span></span>
+        <span class="t-head"><span class="jp t-jp">${MODS[m].jp}</span><span class="t-fr">${J.modName(m)}</span></span>
         ${bar(p.levels, p.total)}
-        <span class="t-n"><b>${p.learned}</b><small>/ ${p.total} ${MODS[m].unit}</small></span>
-        <span class="t-meta">${p.levels[3]} maîtrisés${pr.finish ? ` · fin prévue ${J.fmtShort(pr.finish)}` : ""}</span>
+        <span class="t-n"><b>${p.learned}</b><small>/ ${p.total} ${J.modUnit(m)}</small></span>
+        <span class="t-meta">${p.levels[3]} ${L("maîtrisés", "mastered")}${pr.finish ? ` · ${L("fin prévue", "expected end")} ${J.fmtShort(pr.finish)}` : ""}</span>
         <span class="t-status">${st}</span>
       </span></button>`;
   }
@@ -192,7 +208,7 @@
     for (let i = 6; i >= 0; i--) days.push(J.addDays(J.today(), -i));
     const streak = J.streak();
     return `<section class="stampcard">
-      <div class="sc-head"><h3 class="hand">がんばりカード</h3><span class="muted small">Carte de tampons · prévu ${J.S.settings.daysPerWeek} j/sem · réel ${J.measuredDPW() ?? "—"}</span>
+      <div class="sc-head"><h3 class="hand">がんばりカード</h3><span class="muted small">${L("Carte de tampons", "Stamp card")} · ${L("prévu", "planned")} ${J.S.settings.daysPerWeek} ${dpw()} · ${L("réel", "actual")} ${J.measuredDPW() === null ? "—" : J.num(J.measuredDPW())}</span>
         <span class="sc-streak"><b>${streak}</b>日連続</span></div>
       <div class="sc-grid">${days.map((d) => {
         const x = J.S.days[d], min = x ? Math.round(x.sec / 60) : 0, today = d === J.today();
@@ -204,12 +220,13 @@
   /* Pages module */
   VIEWS.mod = ({ m, f = "all", q = "", page = 0 }) => {
     const c = J.counts(m), acc = J.accuracy(m);
-    const head = `<section class="mod-head"><div><h1><span class="jp">${MODS[m].jp}</span> ${MODS[m].fr} <small>${J.LEVEL}</small></h1>
+    const head = `<section class="mod-head"><div><h1><span class="jp">${MODS[m].jp}</span> ${J.modName(m)} <small>${J.LEVEL}</small></h1>
       ${bar(c.levels, c.total)}
-      <div class="legend">${J.LEVELS.map((l, i) => `<span><i class="lv${i}"></i>${l} ${c.levels[i]}</span>`).join("")}${acc !== null ? `<span>Réussite ${Math.round(acc * 100)} %</span>` : ""}</div></div>
-      <div class="row"><button class="btn primary" data-act="practice" data-m="${m}">S’entraîner</button><button class="btn" data-act="mod-test" data-m="${m}">Test JLPT ${MODS[m].fr.toLowerCase()}</button>
-      ${m === "g" ? `<a class="btn" href="Fiches-grammaire-N1.html" target="_blank">Fiches imprimables</a>` : ""}</div></section>`;
-    const filters = [["all", "Tous"], ["0", "Nouveaux"], ["1", "En cours"], ["2", "Acquis"], ["3", "Maîtrisés"], ["weak", "Points faibles"], ["due", "À réviser"]].concat(m !== "g" ? [["out", "Retirés"]] : []);
+      <div class="legend">${J.LEVELS.map((l, i) => `<span><i class="lv${i}"></i>${l} ${c.levels[i]}</span>`).join("")}${acc !== null ? `<span>${L("Réussite", "Accuracy")} ${Math.round(acc * 100)} %</span>` : ""}</div></div>
+      <div class="row"><button class="btn primary" data-act="practice" data-m="${m}">${L("S’entraîner", "Practice")}</button><button class="btn" data-act="mod-test" data-m="${m}">${L("Test JLPT", "JLPT test")} · ${J.modName(m).toLowerCase()}</button>
+      ${m === "g" ? `<a class="btn" href="Fiches-grammaire-N1.html?lang=${J.lang()}" target="_blank">${L("Fiches imprimables", "Printable sheets")}</a>` : ""}</div></section>`;
+    const filters = [["all", L("Tous", "All")], ["0", L("Nouveaux", "New")], ["1", L("En cours", "Learning")], ["2", L("Acquis", "Known")], ["3", L("Maîtrisés", "Mastered")], ["weak", L("Points faibles", "Weak spots")], ["due", L("À réviser", "Due")]]
+      .concat(m !== "g" ? [["out", L("Retirés", "Removed")]] : []);
     let list = J.items[m];
     if (f === "out") list = J.all[m].filter((x) => J.isExcluded(m, x.id));
     else if (f === "weak") list = J.weak(m, 300);
@@ -217,27 +234,27 @@
     else if (f !== "all") list = list.filter((x) => J.levelOf(m, x.id) === +f);
     if (q) {
       const ql = q.toLowerCase();
-      list = list.filter((x) => (m === "v" ? x.w + x.r + x.m : m === "k" ? x.k + x.on.join() + x.kun.join() + x.m : x.p + x.s + x.f).toLowerCase().includes(ql));
+      list = list.filter((x) => (m === "v" ? x.w + x.r + x.m + J.mean("v", x) : m === "k" ? x.k + x.on.join() + x.kun.join() + x.m + J.mean("k", x) : x.p + J.gs(x, "s") + x.f).toLowerCase().includes(ql));
     }
-    const ctrl = `<div class="filters"><input id="search" data-m="${m}" placeholder="Rechercher…" value="${esc(q)}">
+    const ctrl = `<div class="filters"><input id="search" data-m="${m}" placeholder="${L("Rechercher…", "Search…")}" value="${esc(q)}">
       <div class="seg wrap">${filters.map(([k, l]) => `<button class="${f === k ? "on" : ""}" data-act="filter" data-m="${m}" data-f="${k}">${l}</button>`).join("")}</div></div>`;
     let body = "";
     if (m === "g") {
       body = J.gcats.map((cat) => {
         const pts = list.filter((x) => x.cat === cat.id);
         if (!pts.length) return "";
-        return `<h3 class="cat"><span class="jp">${esc(cat.jp)}</span> · ${esc(cat.fr)}</h3><div class="glist">${pts.map((g) =>
-          `<button class="gitem" data-act="open-item" data-m="g" data-id="${g.id}"><i class="dot lv${J.levelOf("g", g.id)}"></i><span class="num">${g.n}</span><span class="jp">${esc(g.p)}</span><span class="muted">${esc(g.s)}</span></button>`).join("")}</div>`;
+        return `<h3 class="cat"><span class="jp">${esc(cat.jp)}</span> · ${esc(J.gcat(cat))}</h3><div class="glist">${pts.map((g) =>
+          `<button class="gitem" data-act="open-item" data-m="g" data-id="${g.id}"><i class="dot lv${J.levelOf("g", g.id)}"></i><span class="num">${g.n}</span><span class="jp">${esc(g.p)}</span><span class="muted">${esc(J.gs(g, "s"))}</span></button>`).join("")}</div>`;
       }).join("");
     } else {
       const per = m === "k" ? 240 : 120, pages = Math.max(1, Math.ceil(list.length / per)), pg = Math.min(page, pages - 1);
       const slice = list.slice(pg * per, pg * per + per);
       body = m === "k"
-        ? `<div class="kgrid">${slice.map((k) => `<button class="ktile lv${J.levelOf("k", k.id)} jp" data-act="open-item" data-m="k" data-id="${esc(k.id)}" title="${esc(k.m)}">${esc(k.k)}</button>`).join("")}</div>`
-        : `<div class="vlist">${slice.map((v) => `<button class="vrow" data-act="open-item" data-m="v" data-id="${esc(v.id)}"><i class="dot lv${J.levelOf("v", v.id)}"></i><span class="jp w">${esc(v.w)}</span><span class="jp r">${esc(v.r)}</span><span class="mm">${esc(J.shortMeaning(v.m))}</span></button>`).join("")}</div>`;
-      if (pages > 1) body += `<div class="pager">${pg > 0 ? `<button class="btn" data-act="page" data-m="${m}" data-pg="${pg - 1}">← Précédent</button>` : ""}<span>Page ${pg + 1} / ${pages} · ${list.length} éléments</span>${pg < pages - 1 ? `<button class="btn" data-act="page" data-m="${m}" data-pg="${pg + 1}">Suivant →</button>` : ""}</div>`;
+        ? `<div class="kgrid">${slice.map((k) => `<button class="ktile lv${J.levelOf("k", k.id)} jp" data-act="open-item" data-m="k" data-id="${esc(k.id)}" title="${esc(J.mean("k", k))}">${esc(k.k)}</button>`).join("")}</div>`
+        : `<div class="vlist">${slice.map((v) => `<button class="vrow" data-act="open-item" data-m="v" data-id="${esc(v.id)}"><i class="dot lv${J.levelOf("v", v.id)}"></i><span class="jp w">${esc(v.w)}</span><span class="jp r">${esc(v.r)}</span><span class="mm">${esc(J.shortMeaning(J.mean("v", v)))}</span></button>`).join("")}</div>`;
+      if (pages > 1) body += `<div class="pager">${pg > 0 ? `<button class="btn" data-act="page" data-m="${m}" data-pg="${pg - 1}">← ${L("Précédent", "Previous")}</button>` : ""}<span>Page ${pg + 1} / ${pages} · ${list.length} ${L("éléments", "items")}</span>${pg < pages - 1 ? `<button class="btn" data-act="page" data-m="${m}" data-pg="${pg + 1}">${L("Suivant", "Next")} →</button>` : ""}</div>`;
     }
-    return head + ctrl + (body || `<p class="muted">Aucun élément.</p>`);
+    return head + ctrl + (body || `<p class="muted">${L("Aucun élément.", "No items.")}</p>`);
   };
 
   /* Fiche d’un élément */
@@ -245,31 +262,31 @@
     const r = J.rec(m, id), lv = J.levelOf(m, id);
     const list = J.all[m], idx = list.findIndex((x) => x.id === id);
     const prev = list[idx - 1], next = list[idx + 1];
-    const stat = r && r.at ? `<div class="stat-line"><span class="pill lv${lv}">${J.LEVELS[lv]}</span><span>Appris le ${J.fmtShort(r.at)}</span><span>Prochaine révision : ${r.due ? J.fmtShort(r.due) : "—"}</span><span>✓ ${r.ok} · ✗ ${r.ko}</span></div>`
-      : `<div class="stat-line"><span class="pill">Nouveau</span><button class="btn sm" data-act="known" data-m="${m}" data-id="${esc(id)}">Je le connais déjà</button></div>`;
+    const stat = r && r.at ? `<div class="stat-line"><span class="pill lv${lv}">${J.LEVELS[lv]}</span><span>${L("Appris le", "Learned on")} ${J.fmtShort(r.at)}</span><span>${L("Prochaine révision", "Next review")} : ${r.due ? J.fmtShort(r.due) : "—"}</span><span>✓ ${r.ok} · ✗ ${r.ko}</span></div>`
+      : `<div class="stat-line"><span class="pill">${J.LEVELS[0]}</span><button class="btn sm" data-act="known" data-m="${m}" data-id="${esc(id)}">${L("Je le connais déjà", "I already know it")}</button></div>`;
     const out = J.isExcluded(m, id);
     const body = (m === "g" ? J.grammarLesson(J.byId.g[id], false) : `<div class="card">${J.learnCard(m, id)}</div>`)
-      + (m !== "g" ? `<div class="row">${out ? `<span class="pill bad">Retiré des leçons</span><button class="btn sm" data-act="exclude" data-m="${m}" data-id="${esc(id)}" data-on="0">Remettre dans le N1</button>`
-        : `<button class="link" data-act="exclude" data-m="${m}" data-id="${esc(id)}" data-on="1">Pas du N1 : retirer des leçons</button>`}</div>` : "");
-    return `<div class="item-nav"><button class="link" data-act="nav" data-v="mod-${m}">← ${MODS[m].fr}</button>
+      + (m !== "g" ? `<div class="row">${out ? `<span class="pill bad">${L("Retiré des leçons", "Removed from lessons")}</span><button class="btn sm" data-act="exclude" data-m="${m}" data-id="${esc(id)}" data-on="0">${L("Remettre dans le N1", "Put back into N1")}</button>`
+        : `<button class="link" data-act="exclude" data-m="${m}" data-id="${esc(id)}" data-on="1">${L("Pas du N1 : retirer des leçons", "Not N1: remove from lessons")}</button>`}</div>` : "");
+    return `<div class="item-nav"><button class="link" data-act="nav" data-v="mod-${m}">← ${J.modName(m)}</button>
       <span>${prev ? `<button class="btn sm" data-act="open-item" data-m="${m}" data-id="${esc(prev.id)}">←</button>` : ""}
       ${next ? `<button class="btn sm" data-act="open-item" data-m="${m}" data-id="${esc(next.id)}">→</button>` : ""}</span></div>
       ${stat}${body}
-      ${m === "g" ? `<div class="row"><button class="btn primary" data-act="drill" data-m="g" data-id="${id}">M’entraîner sur ce point (5 questions)</button></div>` : ""}`;
+      ${m === "g" ? `<div class="row"><button class="btn primary" data-act="drill" data-m="g" data-id="${id}">${L("M’entraîner sur ce point (5 questions)", "Practice this point (5 questions)")}</button></div>` : ""}`;
   };
 
   /* Choix d’entraînement */
   VIEWS.practice = ({ m }) => {
     const c = J.counts(m);
-    return `<section class="card"><h1>S’entraîner · <span class="jp">${MODS[m].jp}</span> ${MODS[m].fr}</h1>
-      <p class="muted">L’entraînement libre ne modifie pas ton planning ; il enregistre seulement tes réussites et tes erreurs.</p>
-      <div class="field"><label>Sur quels éléments ?</label><div class="seg wrap" id="p-src">
-        <button class="on" data-act="pseg" data-g="src" data-v="learned">Déjà vus (${c.learned})</button>
-        <button data-act="pseg" data-g="src" data-v="weak">Points faibles (${J.weak(m, 999).length})</button>
-        <button data-act="pseg" data-g="src" data-v="all">Tous (${c.total})</button></div></div>
-      <div class="field"><label>Nombre de questions</label><div class="seg" id="p-n">
+    return `<section class="card"><h1>${L("S’entraîner", "Practice")} · <span class="jp">${MODS[m].jp}</span> ${J.modName(m)}</h1>
+      <p class="muted">${L("L’entraînement libre ne modifie pas ton planning ; il enregistre seulement tes réussites et tes erreurs.", "Free practice does not change your schedule; it only records your correct answers and mistakes.")}</p>
+      <div class="field"><label>${L("Sur quels éléments ?", "Which items?")}</label><div class="seg wrap" id="p-src">
+        <button class="on" data-act="pseg" data-g="src" data-v="learned">${L("Déjà vus", "Already seen")} (${c.learned})</button>
+        <button data-act="pseg" data-g="src" data-v="weak">${L("Points faibles", "Weak spots")} (${J.weak(m, 999).length})</button>
+        <button data-act="pseg" data-g="src" data-v="all">${L("Tous", "All")} (${c.total})</button></div></div>
+      <div class="field"><label>${L("Nombre de questions", "Number of questions")}</label><div class="seg" id="p-n">
         ${[10, 20, 30, 50].map((n, i) => `<button class="${i === 0 ? "on" : ""}" data-act="pseg" data-g="n" data-v="${n}">${n}</button>`).join("")}</div></div>
-      <button class="btn primary big" data-act="practice-go" data-m="${m}">Démarrer</button></section>`;
+      <button class="btn primary big" data-act="practice-go" data-m="${m}">${L("Démarrer", "Start")}</button></section>`;
   };
 
   /* Progression */
@@ -280,29 +297,31 @@
     for (let i = 13; i >= 0; i--) days.push(J.addDays(J.today(), -i));
     const maxSec = Math.max(60, ...days.map((d) => (J.S.days[d] ? J.S.days[d].sec : 0)));
     let totalSec = 0; for (const d in J.S.days) totalSec += J.S.days[d].sec;
-    return `<h1>進捗 · Progression</h1>
+    return `<h1>進捗 · ${L("Progression", "Progress")}</h1>
       <div class="kpis">
-        <div class="kpi"><b>${J.streak()}</b><span>jours d’affilée</span></div>
-        <div class="kpi"><b>${fmtMin(Math.round(totalSec / 60))}</b><span>temps total</span></div>
-        <div class="kpi"><b>${J.S.settings.daysPerWeek}</b><span>j/sem prévus</span></div>
-        <div class="kpi"><b>${mdpw ?? "—"}</b><span>j/sem réels (4 sem.)</span></div>
-        <div class="kpi"><b>J-${Math.max(0, plan.examIn)}</b><span>avant le JLPT</span></div>
+        <div class="kpi"><b>${J.streak()}</b><span>${L("jours d’affilée", "day streak")}</span></div>
+        <div class="kpi"><b>${fmtMin(Math.round(totalSec / 60))}</b><span>${L("temps total", "total time")}</span></div>
+        <div class="kpi"><b>${J.S.settings.daysPerWeek}</b><span>${L("j/sem prévus", "planned days/wk")}</span></div>
+        <div class="kpi"><b>${mdpw === null ? "—" : J.num(mdpw)}</b><span>${L("j/sem réels (4 sem.)", "actual days/wk (4 wk)")}</span></div>
+        <div class="kpi"><b>J-${Math.max(0, plan.examIn)}</b><span>${L("avant le JLPT", "until the JLPT")}</span></div>
       </div>
-      <div class="card"><h3>Suis-je dans les temps ?</h3>
-        <table class="plan"><thead><tr><th></th><th>Vus</th><th>Maîtrisés</th><th>Réussite</th><th>Rythme</th><th>Fin prévue</th><th>Objectif</th></tr></thead><tbody>
+      <div class="card"><h3>${L("Suis-je dans les temps ?", "Am I on track?")}</h3>
+        <table class="plan"><thead><tr><th></th><th>${L("Vus", "Seen")}</th><th>${L("Maîtrisés", "Mastered")}</th><th>${L("Réussite", "Accuracy")}</th><th>${L("Rythme", "Pace")}</th><th>${L("Fin prévue", "Expected end")}</th><th>${L("Objectif", "Target")}</th></tr></thead><tbody>
         ${MOD_ORDER.map((m) => { const p = plan.mods[m], pr = proj[m], acc = J.accuracy(m);
-          return `<tr><th><span class="jp">${MODS[m].jp}</span> ${MODS[m].fr}</th><td>${p.learned}/${p.total}</td><td>${p.levels[3]}</td><td>${acc === null ? "—" : Math.round(acc * 100) + " %"}</td>
-          <td>${String(pr.perStudyDay).replace(".", ",")}/jour</td><td class="${pr.onTime ? "good" : "bad"}">${pr.finish ? J.fmtShort(pr.finish) : "—"}</td><td>${J.fmtShort(plan.target)}</td></tr>`; }).join("")}
+          return `<tr><th><span class="jp">${MODS[m].jp}</span> ${J.modName(m)}</th><td>${p.learned}/${p.total}</td><td>${p.levels[3]}</td><td>${acc === null ? "—" : Math.round(acc * 100) + " %"}</td>
+          <td>${J.num(pr.perStudyDay)}/${L("jour", "day")}</td><td class="${pr.onTime ? "good" : "bad"}">${pr.finish ? J.fmtShort(pr.finish) : "—"}</td><td>${J.fmtShort(plan.target)}</td></tr>`; }).join("")}
         </tbody></table>
-        <p class="muted small">L’objectif est de tout avoir vu ${J.S.settings.finalWeeks} semaines avant l’examen (${J.fmtDate(J.S.settings.examDate)}), pour garder du temps pour la révision finale. La projection utilise ton rythme réel dès que tu as assez de jours de données.</p>
+        <p class="muted small">${L(`L’objectif est de tout avoir vu ${J.S.settings.finalWeeks} semaines avant l’examen (${J.fmtDate(J.S.settings.examDate)}), pour garder du temps pour la révision finale. La projection utilise ton rythme réel dès que tu as assez de jours de données.`,
+          `The target is to have seen everything ${J.S.settings.finalWeeks} weeks before the exam (${J.fmtDate(J.S.settings.examDate)}), to keep time for final review. The projection uses your actual pace once there are enough days of data.`)}</p>
         <p class="small">${planNote(plan)}</p></div>
-      <div class="card"><h3>Temps d’étude, 14 derniers jours</h3><div class="bars">${days.map((d) => { const s = J.S.days[d] ? J.S.days[d].sec : 0;
+      <div class="card"><h3>${L("Temps d’étude, 14 derniers jours", "Study time, last 14 days")}</h3><div class="bars">${days.map((d) => { const s = J.S.days[d] ? J.S.days[d].sec : 0;
           return `<div class="b" title="${J.fmtShort(d)} : ${Math.round(s / 60)} min"><span style="height:${(s / maxSec) * 100}%"></span><i>${J.parse(d).getDate()}</i></div>`; }).join("")}</div>
-        <p class="muted small">Temps moyen mesuré : vocabulaire ${Math.round(J.S.timing.v.learn)} s par nouveau mot · kanji ${Math.round(J.S.timing.k.learn)} s · grammaire ${fmtMin(Math.round(J.S.timing.g.learn / 60))} par nouveau point. Ces valeurs s’ajustent toutes seules et servent à estimer la durée des leçons.</p></div>
-      <div class="card"><h3>Calendrier</h3>${heatmap()}</div>
+        <p class="muted small">${L(`Temps moyen mesuré : vocabulaire ${Math.round(J.S.timing.v.learn)} s par nouveau mot · kanji ${Math.round(J.S.timing.k.learn)} s · grammaire ${fmtMin(Math.round(J.S.timing.g.learn / 60))} par nouveau point. Ces valeurs s’ajustent toutes seules et servent à estimer la durée des leçons.`,
+          `Measured average time: vocabulary ${Math.round(J.S.timing.v.learn)} s per new word · kanji ${Math.round(J.S.timing.k.learn)} s · grammar ${fmtMin(Math.round(J.S.timing.g.learn / 60))} per new point. These values adjust automatically and are used to estimate lesson length.`)}</p></div>
+      <div class="card"><h3>${L("Calendrier", "Calendar")}</h3>${heatmap()}</div>
       <div class="grid3">${MOD_ORDER.map((m) => { const w = J.weak(m, 8);
-        return `<div class="card"><h3>Points faibles · ${MODS[m].fr}</h3>${w.length ? w.map((x) => `<button class="weak" data-act="open-item" data-m="${m}" data-id="${esc(x.id)}"><span class="jp">${esc(m === "v" ? x.w : m === "k" ? x.k : x.p)}</span><span class="muted">✗ ${J.rec(m, x.id).ko}</span></button>`).join("") : `<p class="muted">Aucun pour l’instant.</p>`}</div>`; }).join("")}</div>
-      <div class="row"><button class="btn primary" data-act="exam-start">Petit test (30 questions)</button></div>`;
+        return `<div class="card"><h3>${L("Points faibles", "Weak spots")} · ${J.modName(m)}</h3>${w.length ? w.map((x) => `<button class="weak" data-act="open-item" data-m="${m}" data-id="${esc(x.id)}"><span class="jp">${esc(m === "v" ? x.w : m === "k" ? x.k : x.p)}</span><span class="muted">✗ ${J.rec(m, x.id).ko}</span></button>`).join("") : `<p class="muted">${L("Aucun pour l’instant.", "None yet.")}</p>`}</div>`; }).join("")}</div>
+      <div class="row"><button class="btn primary" data-act="exam-start">${L("Petit test (30 questions)", "Quick test (30 questions)")}</button></div>`;
   };
 
   function heatmap() {
@@ -316,7 +335,7 @@
       const lv = min === 0 ? 0 : min < 10 ? 1 : min < 25 ? 2 : min < 45 ? 3 : 4;
       cells.push(`<i class="h${lv}" title="${J.fmtShort(d)} : ${Math.round(min)} min"></i>`);
     }
-    return `<div class="heat">${cells.join("")}</div><div class="heat-legend">Moins <i class="h0"></i><i class="h1"></i><i class="h2"></i><i class="h3"></i><i class="h4"></i> Plus</div>`;
+    return `<div class="heat">${cells.join("")}</div><div class="heat-legend">${L("Moins", "Less")} <i class="h0"></i><i class="h1"></i><i class="h2"></i><i class="h3"></i><i class="h4"></i> ${L("Plus", "More")}</div>`;
   }
 
   /* Réglages */
@@ -324,21 +343,23 @@
     const s = J.S.settings;
     const u = J.user();
     const st = u
-      ? `<p>Ta progression est synchronisée sur ton compte <b>${esc(u.email || u.name || "")}</b>.${J.store.lastSave ? ` Dernière synchronisation : ${J.store.lastSave.toLocaleTimeString("fr-FR")}.` : ""}</p>${J.store.error ? `<p class="bad">${esc(J.store.error)}</p>` : ""}`
-      : `<p class="bad">Tu n’es pas connecté : ta progression est gardée dans ce navigateur seulement. <button class="link" data-act="nav" data-v="account">Se connecter</button></p>`;
-    return `<h1>設定 · Réglages</h1>
-      <section class="card">${settingsCore(s, J.jlptSessions(4))}
-        <div class="field"><label>Semaines de révision finale avant l’examen (sans nouveaux éléments)</label>
+      ? `<p>${L("Ta progression est synchronisée sur ton compte", "Your progress is synced to your account")} <b>${esc(u.email || u.name || "")}</b>.${J.store.lastSave ? ` ${L("Dernière synchronisation", "Last sync")} : ${J.store.lastSave.toLocaleTimeString(J.locale())}.` : ""}</p>${J.store.error ? `<p class="bad">${esc(J.store.error)}</p>` : ""}`
+      : `<p class="bad">${L("Tu n’es pas connecté : ta progression est gardée dans ce navigateur seulement.", "You are not signed in: your progress is only kept in this browser.")} <button class="link" data-act="nav" data-v="account">${L("Se connecter", "Sign in")}</button></p>`;
+    return `<h1>設定 · ${L("Réglages", "Settings")}</h1>
+      <section class="card">
+        <div class="field"><label>${L("Langue de l’interface et des traductions", "Language of the interface and translations")}</label>${langSwitch()}</div>
+        ${settingsCore(s, J.jlptSessions(4))}
+        <div class="field"><label>${L("Semaines de révision finale avant l’examen (sans nouveaux éléments)", "Weeks of final review before the exam (no new items)")}</label>
           <div class="seg">${[0, 1, 2, 3, 4].map((n) => `<button class="${s.finalWeeks === n ? "on" : ""}" data-act="set-final" data-n="${n}">${n}</button>`).join("")}</div></div>
-        <div class="field"><label>Questions de test par leçon</label><div class="row">${MOD_ORDER.map((m) => `<label class="num">${MODS[m].fr} <input type="number" min="0" max="30" data-set="test-${m}" value="${s.tests[m]}"></label>`).join("")}</div></div>
-        <div class="field"><label>Vitesse de la voix japonaise</label><input type="range" min="0.6" max="1.2" step="0.05" data-set="rate" value="${s.rate}"></div>
-        <div class="preview"><h3>Effet sur ton planning</h3>${planTable(J.plan(), true)}<p class="muted">${planNote(J.plan())}</p></div>
+        <div class="field"><label>${L("Questions de test par leçon", "Test questions per lesson")}</label><div class="row">${MOD_ORDER.map((m) => `<label class="num">${J.modName(m)} <input type="number" min="0" max="30" data-set="test-${m}" value="${s.tests[m]}"></label>`).join("")}</div></div>
+        <div class="field"><label>${L("Vitesse de la voix japonaise", "Japanese voice speed")}</label><input type="range" min="0.6" max="1.2" step="0.05" data-set="rate" value="${s.rate}"></div>
+        <div class="preview"><h3>${L("Effet sur ton planning", "Effect on your plan")}</h3>${planTable(J.plan(), true)}<p class="muted">${planNote(J.plan())}</p></div>
       </section>
-      <section class="card"><h3>Sauvegarde</h3>${st}
-        <div class="row"><button class="btn" data-act="export">Exporter une copie (.json)</button>
-        <button class="btn" data-act="import">Importer une sauvegarde</button><input type="file" id="importFile" accept=".json,application/json" hidden></div>
-        <p class="muted small">L’export est une copie de secours ; il peut être réimporté sur n’importe quel appareil.</p></section>
-      <section class="card danger"><h3>Zone sensible</h3><button class="btn" data-act="reset">Tout réinitialiser…</button></section>`;
+      <section class="card"><h3>${L("Sauvegarde", "Backup")}</h3>${st}
+        <div class="row"><button class="btn" data-act="export">${L("Exporter une copie (.json)", "Export a copy (.json)")}</button>
+        <button class="btn" data-act="import">${L("Importer une sauvegarde", "Import a backup")}</button><input type="file" id="importFile" accept=".json,application/json" hidden></div>
+        <p class="muted small">${L("L’export est une copie de secours ; il peut être réimporté sur n’importe quel appareil.", "The export is a safety copy; it can be imported again on any device.")}</p></section>
+      <section class="card danger"><h3>${L("Zone sensible", "Danger zone")}</h3><button class="btn" data-act="reset">${L("Tout réinitialiser…", "Reset everything…")}</button></section>`;
   };
 
   /* Compte */
@@ -347,29 +368,29 @@
     const u = J.user();
     if (u) {
       const status = J.store.expired
-        ? `<p class="bad">Ta session a expiré. Reconnecte-toi pour reprendre la synchronisation (rien n’est perdu, tout est gardé dans ce navigateur).</p><button class="btn primary" data-act="relogin">Se reconnecter</button>`
+        ? `<p class="bad">${L("Ta session a expiré. Reconnecte-toi pour reprendre la synchronisation (rien n’est perdu, tout est gardé dans ce navigateur).", "Your session has expired. Sign in again to resume syncing (nothing is lost, everything is kept in this browser).")}</p><button class="btn primary" data-act="relogin">${L("Se reconnecter", "Sign in again")}</button>`
         : J.store.error ? `<p class="bad">${esc(J.store.error)}</p>`
-        : `<p class="good">● Progression synchronisée${J.store.lastSave ? ` (dernière fois à ${J.store.lastSave.toLocaleTimeString("fr-FR")})` : ""}.</p>`;
-      return `<h1>アカウント · Mon compte</h1>
+        : `<p class="good">● ${L("Progression synchronisée", "Progress synced")}${J.store.lastSave ? ` (${L("dernière fois à", "last at")} ${J.store.lastSave.toLocaleTimeString(J.locale())})` : ""}.</p>`;
+      return `<h1>アカウント · ${L("Mon compte", "My account")}</h1>
         <section class="card"><div class="acct"><div class="avatar">${esc((u.name || u.email || "?")[0].toUpperCase())}</div>
-          <div><b>${esc(u.name || "")}</b><div class="muted">${esc(u.email || "")} · connexion ${esc(PROV[u.provider] || u.provider)}</div></div></div>
+          <div><b>${esc(u.name || "")}</b><div class="muted">${esc(u.email || "")} · ${L("connexion", "signed in with")} ${esc(PROV[u.provider] || u.provider)}</div></div></div>
           ${status}
-          <div class="row"><button class="btn" data-act="sync-now">Synchroniser maintenant</button><button class="btn" data-act="logout">Se déconnecter</button></div>
-          <p class="muted small">Sur un ordinateur partagé, déconnecte-toi : la progression est alors effacée de ce navigateur (elle reste sur ton compte).</p></section>
-        <section class="card danger"><h3>Supprimer mon compte</h3><p class="muted">Efface définitivement ton compte et toute ta progression enregistrée en ligne.</p>
-          <button class="btn" data-act="delete-account">Supprimer mon compte…</button></section>`;
+          <div class="row"><button class="btn" data-act="sync-now">${L("Synchroniser maintenant", "Sync now")}</button><button class="btn" data-act="logout">${L("Se déconnecter", "Sign out")}</button></div>
+          <p class="muted small">${L("Sur un ordinateur partagé, déconnecte-toi : la progression est alors effacée de ce navigateur (elle reste sur ton compte).", "On a shared computer, sign out: your progress is then removed from this browser (it stays on your account).")}</p></section>
+        <section class="card danger"><h3>${L("Supprimer mon compte", "Delete my account")}</h3><p class="muted">${L("Efface définitivement ton compte et toute ta progression enregistrée en ligne.", "Permanently deletes your account and all progress saved online.")}</p>
+          <button class="btn" data-act="delete-account">${L("Supprimer mon compte…", "Delete my account…")}</button></section>`;
     }
     const P = Object.fromEntries(J.providers.map((p) => [p.id, p.enabled]));
-    return `<h1>アカウント · Se connecter</h1>
+    return `<h1>アカウント · ${L("Se connecter", "Sign in")}</h1>
       <section class="card login">
-        <p>Connecte-toi pour retrouver ta progression sur tous tes appareils (et plus tard dans l’appli iPhone). Sans compte, elle reste uniquement dans ce navigateur.</p>
+        <p>${L("Connecte-toi pour retrouver ta progression sur tous tes appareils (et plus tard dans l’appli iPhone). Sans compte, elle reste uniquement dans ce navigateur.", "Sign in to keep your progress on all your devices (and later in the iPhone app). Without an account, it only stays in this browser.")}</p>
         ${J.authReady ? `<div class="auth-btns">
           ${P.google ? `<div id="g-btn" class="g-btn"></div>` : ""}
-          ${P.apple ? `<button class="btn auth apple" data-act="login-apple"><span aria-hidden="true"></span> Continuer avec Apple</button>` : ""}
-          ${P.microsoft ? `<button class="btn auth ms" data-act="login-ms"><span class="ms-logo" aria-hidden="true"><i></i><i></i><i></i><i></i></span> Continuer avec Microsoft</button>` : ""}
-        </div>` : `<p class="bad">La connexion n’est pas encore activée sur ce site (identifiants Google, Apple ou Microsoft à configurer).</p>`}
+          ${P.apple ? `<button class="btn auth apple" data-act="login-apple"><span aria-hidden="true"></span> ${L("Continuer avec Apple", "Continue with Apple")}</button>` : ""}
+          ${P.microsoft ? `<button class="btn auth ms" data-act="login-ms"><span class="ms-logo" aria-hidden="true"><i></i><i></i><i></i><i></i></span> ${L("Continuer avec Microsoft", "Continue with Microsoft")}</button>` : ""}
+        </div>` : `<p class="bad">${L("La connexion n’est pas encore activée sur ce site.", "Sign-in is not enabled on this site yet.")}</p>`}
         <div id="auth-msg" class="bad"></div>
-        <p class="muted small">Ce que tu as déjà fait ici sans compte sera ajouté à ton compte. Aucun mot de passe n’est stocké par JLPT Étude.</p>
+        <p class="muted small">${L("Ce que tu as déjà fait ici sans compte sera ajouté à ton compte. Aucun mot de passe n’est stocké par JLPT Étude.", "What you have already done here without an account will be added to your account. JLPT Étude never stores passwords.")}</p>
       </section>`;
   };
 
@@ -399,20 +420,29 @@
     return { date: J.today(), queue: q, pos: 0, fix: {}, ok: 0, ko: 0, errors: [], started: Date.now() };
   }
 
+  // Titres de session : japonais fixe + traduction selon la langue
+  const TITLES = { lesson: "今日のレッスン", practice: "練習", test: "テスト", quick: "ミニテスト" };
+  function runTitle() {
+    if (R.type === "lesson") return TITLES.lesson;
+    if (R.kind === "quick") return `${TITLES.quick} · ${L("Petit test", "Quick test")}`;
+    if (R.kind === "drill") return `${TITLES.practice} · ${J.byId.g[R.ref].p}`;
+    return `${R.kind === "test" ? TITLES.test : TITLES.practice} · ${J.modName(R.ref)}`;
+  }
+
   function startLesson() {
     if (!J.S.lesson || J.S.lesson.date !== J.today()) { J.S.lesson = buildLesson(); J.save(); }
-    R = J.S.lesson; R.type = "lesson"; R.title = "今日のレッスン"; R.timed = false;
+    R = J.S.lesson; R.type = "lesson"; R.timed = false;
     EX = null;
     J.go("run");
   }
-  function startPractice(m, src, n, testOnly, title) {
+  function startPractice(m, src, n, testOnly) {
     let pool;
     if (src === "weak") pool = J.weak(m, 999);
     else if (src === "all") pool = J.items[m];
     else pool = J.items[m].filter((x) => J.isLearned(m, x.id));
     if (!pool.length) pool = J.items[m].slice(0, 60);
     const ids = J.shuffle(pool).slice(0, n).map((x) => x.id);
-    R = { type: "practice", title: title || "練習 · " + MODS[m].fr, queue: ids.map((id) => ({ s: testOnly ? "test" : "rev", m, id, free: true })), pos: 0, fix: {}, ok: 0, ko: 0, errors: [], started: Date.now(), timed: !!testOnly };
+    R = { type: "practice", kind: testOnly ? "test" : "practice", ref: m, queue: ids.map((id) => ({ s: testOnly ? "test" : "rev", m, id, free: true })), pos: 0, fix: {}, ok: 0, ko: 0, errors: [], started: Date.now(), timed: !!testOnly };
     EX = null;
     J.go("run");
   }
@@ -423,29 +453,30 @@
       if (pool.length < 10) pool = pool.concat(J.items[m].slice(0, 80));
       J.shuffle([...new Map(pool.map((x) => [x.id, x])).values()]).slice(0, 10).forEach((x) => q.push({ s: "test", m, id: x.id, free: true }));
     }
-    R = { type: "practice", title: "ミニテスト · Petit test", queue: q, pos: 0, fix: {}, ok: 0, ko: 0, errors: [], started: Date.now(), timed: true, noFix: true };
+    R = { type: "practice", kind: "quick", queue: q, pos: 0, fix: {}, ok: 0, ko: 0, errors: [], started: Date.now(), timed: true, noFix: true };
     EX = null;
     J.go("run");
   }
 
-  const STAGE_FR = { rev: "Réviser", learn: "Apprendre", check: "Vérifier", test: "Tester", fix: "Rattrapage" };
+  const STAGE = () => ({ rev: L("Réviser", "Review"), learn: L("Apprendre", "Learn"), check: L("Vérifier", "Check"), test: L("Tester", "Test"), fix: L("Rattrapage", "Retry") });
 
   VIEWS.run = () => {
     if (!R) return VIEWS.home();
     while (R.pos < R.queue.length && R.queue[R.pos].skip) R.pos++;
     const it = R.queue[R.pos];
-    const head = `<div class="run-head"><button class="link" data-act="quit">✕ Quitter</button><span class="run-title jp">${esc(R.title)}</span>
+    const head = `<div class="run-head"><button class="link" data-act="quit">✕ ${L("Quitter", "Quit")}</button><span class="run-title jp">${esc(runTitle())}</span>
       ${R.timed ? `<span id="timer" class="timer">${fmtClock((Date.now() - R.started) / 1000)}</span>` : `<span class="muted">${Math.min(R.pos + 1, R.queue.length)} / ${R.queue.length}</span>`}</div>
       <div class="progress ruler"><span style="width:${pct(R.pos, R.queue.length)}%"></span></div>`;
     if (!it) return head + finishView();
-    if (it.s !== "learn" && (!EX || EX._pos !== R.pos)) { EX = J.makeEx(it.m, it.id, it.s === "fix" ? "rev" : it.s, it.kind); EX._pos = R.pos; }
-    const tag = `<div class="ex-tag"><span class="pill mod-${it.m}"><span class="jp">${MODS[it.m].jp}</span> ${MODS[it.m].fr}</span><span class="pill stage-${it.s}">${STAGE_FR[it.s]}</span>${it.s !== "learn" && EX ? `<span class="muted">${esc(EX.label)}</span>` : ""}</div>`;
-    const aside = it.m !== "g" && !it.free ? `<div class="ex-aside"><button data-act="exclude-cur">Ce ${it.m === "v" ? "mot" : "kanji"} n’est pas du niveau N1 ? Le retirer des leçons</button></div>` : "";
+    if (it.s !== "learn" && (!EX || EX._pos !== R.pos || EX._lang !== J.lang())) { EX = J.makeEx(it.m, it.id, it.s === "fix" ? "rev" : it.s, it.kind); EX._pos = R.pos; EX._lang = J.lang(); }
+    const modPill = `<span class="pill mod-${it.m}"><span class="jp">${MODS[it.m].jp}</span> ${J.modName(it.m)}</span>`;
+    const tag = `<div class="ex-tag">${modPill}<span class="pill stage-${it.s}">${STAGE()[it.s]}</span>${it.s !== "learn" && EX ? `<span class="muted">${esc(EX.label)}</span>` : ""}</div>`;
+    const aside = it.m !== "g" && !it.free ? `<div class="ex-aside"><button data-act="exclude-cur">${it.m === "v" ? L("Ce mot n’est pas du niveau N1 ? Le retirer des leçons", "Not an N1 word? Remove it from lessons") : L("Ce kanji n’est pas du niveau N1 ? Le retirer des leçons", "Not an N1 kanji? Remove it from lessons")}</button></div>` : "";
     if (it.s === "learn") {
       if (!R.learnT0 || R.learnPos !== R.pos) { R.learnT0 = Date.now(); R.learnPos = R.pos; }
-      return head + `<section class="card ex">${`<div class="ex-tag"><span class="pill mod-${it.m}"><span class="jp">${MODS[it.m].jp}</span> ${MODS[it.m].fr}</span><span class="pill stage-learn">Nouveau</span></div>`}
+      return head + `<section class="card ex"><div class="ex-tag">${modPill}<span class="pill stage-learn">${J.LEVELS[0]}</span></div>
         ${J.learnCard(it.m, it.id)}
-        <div class="row end"><button class="btn" data-act="learn-known">Déjà connu</button><button class="btn primary" data-act="learn-next" autofocus>J’ai compris → Suivant <kbd>↵</kbd></button></div></section>${aside}`;
+        <div class="row end"><button class="btn" data-act="learn-known">${L("Déjà connu", "Already known")}</button><button class="btn primary" data-act="learn-next" autofocus>${L("J’ai compris → Suivant", "Got it → Next")} <kbd>↵</kbd></button></div></section>${aside}`;
     }
     return head + `<section class="card ex">${tag}${exBody(EX)}</section>${aside}`;
   };
@@ -461,10 +492,10 @@
       }).join("")}</div>`;
       if (ex.answered) h += feedback(ex.correct, ex.correct ? "" : ex.answer) + ex.back + contBtn();
     } else if (ex.mode === "self") {
-      if (!ex.revealed) h += `<div class="row center"><button class="btn primary" data-act="reveal" autofocus>Afficher la réponse <kbd>espace</kbd></button></div>`;
-      else h += ex.back + `<p class="q-help center">Comment t’en es-tu sorti ?</p><div class="grades">
-        <button class="g0" data-act="grade" data-q="0"><span class="jp">×</span>Raté<kbd>1</kbd></button><button class="g1" data-act="grade" data-q="1"><span class="jp">△</span>Difficile<kbd>2</kbd></button>
-        <button class="g2" data-act="grade" data-q="2"><span class="jp">○</span>Bien<kbd>3</kbd></button><button class="g3" data-act="grade" data-q="3"><span class="jp">◎</span>Facile<kbd>4</kbd></button></div>`;
+      if (!ex.revealed) h += `<div class="row center"><button class="btn primary" data-act="reveal" autofocus>${L("Afficher la réponse", "Show answer")} <kbd>${L("espace", "space")}</kbd></button></div>`;
+      else h += ex.back + `<p class="q-help center">${L("Comment t’en es-tu sorti ?", "How did you do?")}</p><div class="grades">
+        <button class="g0" data-act="grade" data-q="0"><span class="jp">×</span>${L("Raté", "Missed")}<kbd>1</kbd></button><button class="g1" data-act="grade" data-q="1"><span class="jp">△</span>${L("Difficile", "Hard")}<kbd>2</kbd></button>
+        <button class="g2" data-act="grade" data-q="2"><span class="jp">○</span>${L("Bien", "Good")}<kbd>3</kbd></button><button class="g3" data-act="grade" data-q="3"><span class="jp">◎</span>${L("Facile", "Easy")}<kbd>4</kbd></button></div>`;
     } else if (ex.mode === "order") {
       const slots = [0, 1, 2, 3].map((k) => {
         const p = ex.picks[k];
@@ -474,15 +505,15 @@
       h += `<div class="sentence jp order" lang="ja">${esc(ex.pre)}${slots}${esc(ex.post)}</div>`;
       if (!ex.answered) {
         h += `<div class="pieces">${ex.order.map((i) => `<button class="piece jp" data-act="piece" data-i="${i}" ${ex.picks.includes(i) ? "disabled" : ""}>${esc(ex.pieces[i])}</button>`).join("")}</div>
-          <div class="row center"><button class="btn" data-act="order-clear">Effacer</button>${ex.picks.length === 4 ? `<button class="btn primary" data-act="order-check" autofocus>Vérifier <kbd>↵</kbd></button>` : ""}</div>`;
+          <div class="row center"><button class="btn" data-act="order-clear">${L("Effacer", "Clear")}</button>${ex.picks.length === 4 ? `<button class="btn primary" data-act="order-check" autofocus>${L("Vérifier", "Check")} <kbd>↵</kbd></button>` : ""}</div>`;
       } else {
-        h += feedback(ex.correct, ex.correct ? "" : `ordre correct ci-dessous · ★ = ${ex.pieces[ex.star]}`) + ex.back + contBtn();
+        h += feedback(ex.correct, ex.correct ? "" : `★ = ${ex.pieces[ex.star]}`) + ex.back + contBtn();
       }
     }
     return h;
   }
-  const feedback = (ok, ans) => `<div class="fb ${ok ? "ok" : "ko"}"><span class="fb-jp">${ok ? "正解！" : "ざんねん"}</span><span>${ok ? "Correct" : `La bonne réponse : <b class="jp">${esc(ans)}</b>`}</span></div>`;
-  const contBtn = () => `<div class="row end"><button class="btn primary" data-act="cont" autofocus>Continuer <kbd>↵</kbd></button></div>`;
+  const feedback = (ok, ans) => `<div class="fb ${ok ? "ok" : "ko"}"><span class="fb-jp">${ok ? "正解！" : "ざんねん"}</span><span>${ok ? L("Correct", "Correct") : `${L("La bonne réponse", "The right answer")} : <b class="jp">${esc(ans)}</b>`}</span></div>`;
+  const contBtn = () => `<div class="row end"><button class="btn primary" data-act="cont" autofocus>${L("Continuer", "Continue")} <kbd>↵</kbd></button></div>`;
 
   function finishView() {
     const lesson = R.type === "lesson";
@@ -491,11 +522,11 @@
     const errs = [...new Map((R.errors || []).map((e) => [e.m + e.id, e])).values()];
     return `<section class="card finish"><h1>${lesson ? "お疲れさまでした！" : "終了！"}</h1>
       <p class="score">${tot ? Math.round((R.ok / tot) * 100) : 0} % <small>${R.ok} ✓ · ${R.ko} ✗</small></p>
-      <p>Durée : ${fmtClock((Date.now() - R.started) / 1000)}</p>
-      ${errs.length ? `<h3>À revoir</h3><div class="errs">${errs.map((e) => { const x = J.byId[e.m][e.id];
-        return `<button class="weak" data-act="open-item" data-m="${e.m}" data-id="${esc(e.id)}"><span class="pill mod-${e.m} jp">${MODS[e.m].jp}</span><span class="jp">${esc(e.m === "v" ? x.w : e.m === "k" ? x.k : x.p)}</span></button>`; }).join("")}</div>` : `<p>Aucune erreur, bravo !</p>`}
-      ${lesson ? `<p class="muted">Ce que tu as raté reviendra dans tes prochaines révisions.</p>` : ""}
-      <div class="row center"><button class="btn primary" data-act="end-run">Retour à l’accueil</button></div></section>`;
+      <p>${L("Durée", "Time")} : ${fmtClock((Date.now() - R.started) / 1000)}</p>
+      ${errs.length ? `<h3>${L("À revoir", "To review")}</h3><div class="errs">${errs.map((e) => { const x = J.byId[e.m][e.id];
+        return `<button class="weak" data-act="open-item" data-m="${e.m}" data-id="${esc(e.id)}"><span class="pill mod-${e.m} jp">${MODS[e.m].jp}</span><span class="jp">${esc(e.m === "v" ? x.w : e.m === "k" ? x.k : x.p)}</span></button>`; }).join("")}</div>` : `<p>${L("Aucune erreur, bravo !", "No mistakes, well done!")}</p>`}
+      ${lesson ? `<p class="muted">${L("Ce que tu as raté reviendra dans tes prochaines révisions.", "What you missed will come back in your next reviews.")}</p>` : ""}
+      <div class="row center"><button class="btn primary" data-act="end-run">${L("Retour à l’accueil", "Back to home")}</button></div></section>`;
   }
 
   /* Résultat d’un exercice */
@@ -532,6 +563,7 @@
   /* ───────── Actions ───────── */
   const A = {
     nav: (d) => { const v = d.v; if (v.startsWith("mod-")) J.go("mod", { m: v.slice(4) }); else J.go(v); },
+    "set-lang": (d) => { J.S.settings.lang = d.l; J.save(); render(); },
     "set-exam": (d) => { J.S.settings.examDate = d.d; J.save(); render(); },
     "set-dpw": (d) => { J.S.settings.daysPerWeek = +d.n; J.S.paceAck = null; J.save(); render(); },
     "set-max": (d) => { J.S.settings.maxMinutes = +d.n; J.save(); render(); },
@@ -542,14 +574,14 @@
     "lesson-start": startLesson,
     "exam-start": startExam,
     practice: (d) => J.go("practice", { m: d.m }),
-    "mod-test": (d) => startPractice(d.m, "learned", 20, true, "テスト · " + MODS[d.m].fr),
+    "mod-test": (d) => startPractice(d.m, "learned", 20, true),
     pseg: (d, el) => { el.parentElement.querySelectorAll("button").forEach((b) => b.classList.remove("on")); el.classList.add("on"); },
     "practice-go": (d) => {
       const src = document.querySelector("#p-src .on").dataset.v, n = +document.querySelector("#p-n .on").dataset.v;
       startPractice(d.m, src, n, false);
     },
     drill: (d) => {
-      R = { type: "practice", title: "練習 · " + J.byId.g[d.id].p, queue: ["g-qcm", "g-rev", "g-cloze", "g-ord", "g-qcm"].map((k) => ({ s: "rev", m: "g", id: d.id, free: true, kind: k })), pos: 0, fix: {}, ok: 0, ko: 0, errors: [], started: Date.now(), noFix: true };
+      R = { type: "practice", kind: "drill", ref: d.id, queue: ["g-qcm", "g-rev", "g-cloze", "g-ord", "g-qcm"].map((k) => ({ s: "rev", m: "g", id: d.id, free: true, kind: k })), pos: 0, fix: {}, ok: 0, ko: 0, errors: [], started: Date.now(), noFix: true };
       EX = null; J.go("run");
     },
     filter: (d) => J.go("mod", { m: d.m, f: d.f, q: (document.getElementById("search") || {}).value || "" }),
@@ -599,20 +631,21 @@
     cont: () => { if (EX && EX.answered) { result(EX.correct ? 2 : 0); advance(); } },
     "login-apple": () => J.signInApple(),
     "login-ms": () => J.signInMicrosoft(),
-    logout: () => { if (!confirm("Se déconnecter ? La progression sera retirée de ce navigateur (elle reste sur ton compte).")) return; J.logout(); R = null; J.go("onboarding"); },
+    logout: () => { if (!confirm(L("Se déconnecter ? La progression sera retirée de ce navigateur (elle reste sur ton compte).", "Sign out? Your progress will be removed from this browser (it stays on your account)."))) return; J.logout(); R = null; J.go("onboarding"); },
     relogin: () => { J.dropSession(); J.go("account"); },
     "sync-now": () => { J.save(true); setTimeout(render, 1500); },
     "delete-account": async () => {
-      if (!confirm("Supprimer ton compte et toute ta progression en ligne ?")) return;
-      if (!confirm("C’est définitif. Confirmer la suppression ?")) return;
-      try { await J.deleteAccount(); R = null; alert("Ton compte a été supprimé."); J.go("onboarding"); } catch (e) { alert(e.message); }
+      if (!confirm(L("Supprimer ton compte et toute ta progression en ligne ?", "Delete your account and all your online progress?"))) return;
+      if (!confirm(L("C’est définitif. Confirmer la suppression ?", "This is permanent. Confirm deletion?"))) return;
+      try { await J.deleteAccount(); R = null; alert(L("Ton compte a été supprimé.", "Your account has been deleted.")); J.go("onboarding"); } catch (e) { alert(e.message); }
     },
     export: () => J.exportFile(),
     import: () => document.getElementById("importFile").click(),
     reset: () => {
-      if (!confirm("Effacer toute ta progression ? (Pense à exporter une copie avant.)")) return;
-      if (!confirm("Vraiment tout effacer ? Cette action est définitive.")) return;
-      J.S = J.defaultState(); J.save(true); R = null; J.go("onboarding");
+      if (!confirm(L("Effacer toute ta progression ? (Pense à exporter une copie avant.)", "Erase all your progress? (Export a copy first.)"))) return;
+      if (!confirm(L("Vraiment tout effacer ? Cette action est définitive.", "Really erase everything? This cannot be undone."))) return;
+      const lang = J.S.settings.lang;
+      J.S = J.defaultState(); J.S.settings.lang = lang; J.refreshItems(); J.save(true); R = null; J.go("onboarding");
     }
   };
 
@@ -626,7 +659,7 @@
     const t = e.target;
     if (t.id === "importFile" && t.files[0]) {
       t.files[0].text().then((txt) => {
-        try { J.importObject(JSON.parse(txt)); alert("Sauvegarde importée."); J.go("home"); } catch (err) { alert(err.message); }
+        try { J.importObject(JSON.parse(txt)); alert(L("Sauvegarde importée.", "Backup imported.")); J.go("home"); } catch (err) { alert(err.message); }
       });
       return;
     }

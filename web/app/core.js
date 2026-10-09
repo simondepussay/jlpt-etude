@@ -6,10 +6,18 @@
 
   /* ───────── Modules & données ───────── */
   J.MODS = {
-    v: { id: "v", jp: "語彙", fr: "Vocabulaire", unit: "mots" },
-    k: { id: "k", jp: "漢字", fr: "Kanji", unit: "kanji" },
-    g: { id: "g", jp: "文法", fr: "Grammaire", unit: "points" }
+    v: { id: "v", jp: "語彙", fr: "Vocabulaire", en: "Vocabulary", unit: ["mots", "words"] },
+    k: { id: "k", jp: "漢字", fr: "Kanji", en: "Kanji", unit: ["kanji", "kanji"] },
+    g: { id: "g", jp: "文法", fr: "Grammaire", en: "Grammar", unit: ["points", "points"] }
   };
+
+  /* ───────── Langue : tout ce qui n’est pas japonais est en français OU en anglais ───────── */
+  J.lang = () => (J.S && J.S.settings && J.S.settings.lang) || ((navigator.language || "").startsWith("fr") ? "fr" : "en");
+  J.L = (fr, en) => (J.lang() === "en" ? en : fr);
+  J.locale = () => (J.lang() === "en" ? "en-GB" : "fr-FR");
+  J.modName = (m) => J.MODS[m][J.lang() === "en" ? "en" : "fr"];
+  J.modUnit = (m) => J.MODS[m].unit[J.lang() === "en" ? 1 : 0];
+  J.num = (x) => Number(x).toLocaleString(J.locale(), { maximumFractionDigits: 1 });
   J.MOD_ORDER = ["v", "k", "g"];
 
   const vocab = (D[J.LEVEL + "-vocab"] || []).map((x) => ({ ...x, id: x.w + "|" + x.r }));
@@ -20,6 +28,15 @@
   J.byId = {};
   for (const m of J.MOD_ORDER) J.byId[m] = Object.fromEntries(J.all[m].map((x) => [x.id, x]));
   J.gcats = D[J.LEVEL + "-grammaire-cats"] || [];
+  /* Contenus traduits : sens français des mots et kanji, grammaire en anglais */
+  const VFR = D[J.LEVEL + "-vocab-fr"] || {}, KFR = D[J.LEVEL + "-kanji-fr"] || {};
+  const GEN = D[J.LEVEL + "-grammaire-en"] || {}, TFR = D[J.LEVEL + "-grammaire-trad"] || {}, TEN = D[J.LEVEL + "-grammaire-trad-en"] || {};
+  J.mean = (m, x) => (J.lang() === "fr" ? (m === "v" ? VFR[x.id] : KFR[x.k]) || x.m : x.m);
+  J.hasFr = (m, x) => !!(m === "v" ? VFR[x.id] : KFR[x.k]);
+  J.gs = (g, f) => (J.lang() === "en" && GEN[g.n] && GEN[g.n][f] !== undefined ? GEN[g.n][f] : g[f]);
+  J.gex = (g, i) => (J.lang() === "en" && GEN[g.n] && GEN[g.n].ex ? GEN[g.n].ex[i] : g.ex[i][1]);
+  J.gcat = (c) => (J.lang() === "en" ? (GEN.cats || {})[c.id] || c.fr : c.fr);
+  J.trad = (jp) => (J.lang() === "en" ? TEN[jp] : TFR[jp]) || "";
 
   // kanji → mots du vocabulaire qui le contiennent
   J.kanjiWords = {};
@@ -35,8 +52,8 @@
   J.parse = (s) => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
   J.addDays = (s, k) => { const d = J.parse(s); d.setDate(d.getDate() + k); return J.today(d); };
   J.diffDays = (a, b) => Math.round((J.parse(b) - J.parse(a)) / 864e5);
-  J.fmtDate = (s) => J.parse(s).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
-  J.fmtShort = (s) => { const d = J.parse(s); return d.toLocaleDateString("fr-FR", d.getFullYear() === new Date().getFullYear() ? { day: "numeric", month: "short" } : { day: "numeric", month: "short", year: "numeric" }); };
+  J.fmtDate = (s) => J.parse(s).toLocaleDateString(J.locale(), { day: "numeric", month: "long", year: "numeric" });
+  J.fmtShort = (s) => { const d = J.parse(s); return d.toLocaleDateString(J.locale(), d.getFullYear() === new Date().getFullYear() ? { day: "numeric", month: "short" } : { day: "numeric", month: "short", year: "numeric" }); };
   J.jpDate = (d = new Date()) => `${d.getMonth() + 1}月${d.getDate()}日（${"日月火水木金土"[d.getDay()]}）`;
 
   // Sessions JLPT : 1er dimanche de juillet et de décembre
@@ -65,6 +82,7 @@
     created: J.today(),
     onboarded: false,
     settings: {
+      lang: (navigator.language || "").slice(0, 2) === "fr" ? "fr" : "en",
       examDate: J.jlptSessions(1)[0],
       daysPerWeek: 4,
       maxMinutes: 45,
@@ -111,7 +129,7 @@
       const r = await fetch("/api/" + path, { ...opts, headers, cache: "no-store" });
       let body = null;
       if (r.status !== 204) { try { body = await r.json(); } catch (e) {} }
-      if (r.status === 401) { J.store.error = (body && body.error) || "Session expirée"; J.store.expired = true; }
+      if (r.status === 401) { J.store.error = J.L("Session expirée", "Session expired"); J.store.expired = true; }
       return { status: r.status, body };
     },
     async load() {
@@ -182,7 +200,7 @@
         J.store.status = "ok";
       } catch (e) {
         J.store.status = "offline";
-        J.store.error = "Hors ligne : la progression sera envoyée dès que possible.";
+        J.store.error = J.L("Hors ligne : la progression sera envoyée dès que possible.", "Offline: your progress will be sent as soon as possible.");
       }
       if (state) state.owner = s.user.id;
     }
@@ -209,7 +227,7 @@
         J.store.error = null;
       } catch (e) {
         J.store.status = "error";
-        J.store.error = "Synchronisation impossible (" + e.message + ") : les données restent dans ce navigateur.";
+        J.store.error = J.L("Synchronisation impossible (" + e.message + ") : les données restent dans ce navigateur.", "Sync failed (" + e.message + "): your data stays in this browser.");
       }
       saving = false;
       document.dispatchEvent(new Event("j:saved"));
@@ -228,7 +246,7 @@
       body: JSON.stringify({ provider, idToken, nonce, name })
     });
     const body = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(body.error || "Connexion refusée");
+    if (!r.ok) throw new Error(body.error || J.L("Connexion refusée", "Sign-in refused"));
     sessSet({ token: body.token, user: body.user });
     J.store.expired = false;
     J.store.error = null;
@@ -258,7 +276,7 @@
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   };
   J.importObject = function (o) {
-    if (!o || !o.version || !o.items) throw new Error("Ce fichier n’est pas une sauvegarde JLPT Étude.");
+    if (!o || !o.version || !o.items) throw new Error(J.L("Ce fichier n’est pas une sauvegarde JLPT Étude.", "This file is not a JLPT Étude backup."));
     const owner = J.S.owner;
     J.S = migrate(o);
     if (owner) J.S.owner = owner;
@@ -285,7 +303,7 @@
   J.isLearned = (m, id) => { const r = J.rec(m, id); return !!(r && r.at); };
   // 0 nouveau · 1 en cours · 2 acquis · 3 maîtrisé
   J.levelOf = (m, id) => { const r = J.rec(m, id); if (!r || !r.at) return 0; return r.iv >= 21 ? 3 : r.iv >= 7 ? 2 : 1; };
-  J.LEVELS = ["Nouveau", "En cours", "Acquis", "Maîtrisé"];
+  Object.defineProperty(J, "LEVELS", { get: () => J.L(["Nouveau", "En cours", "Acquis", "Maîtrisé"], ["New", "Learning", "Known", "Mastered"]) });
 
   J.day = (d = J.today()) => {
     const S = J.S;

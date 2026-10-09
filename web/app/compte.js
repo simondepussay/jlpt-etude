@@ -8,7 +8,7 @@
     const s = document.createElement("script");
     s.src = src; s.async = true;
     s.onload = res;
-    s.onerror = () => rej(new Error("Impossible de charger " + new URL(src).host));
+    s.onerror = () => rej(new Error(J.L("Impossible de charger ", "Could not load ") + new URL(src).host));
     document.head.appendChild(s);
   });
   const randomHex = () => { const a = new Uint8Array(16); crypto.getRandomValues(a); return [...a].map((b) => b.toString(16).padStart(2, "0")).join(""); };
@@ -41,14 +41,14 @@
         ux_mode: "popup",
         callback: (r) => finish("google", r.credential, nonce)
       });
-      google.accounts.id.renderButton(el, { theme: "outline", size: "large", text: "continue_with", locale: "fr", width: 280 });
+      google.accounts.id.renderButton(el, { theme: "outline", size: "large", text: "continue_with", locale: J.lang(), width: 280 });
     } catch (e) { onError(e); }
   };
 
   /* Apple : fenêtre surgissante Sign in with Apple JS */
   J.signInApple = async function () {
     try {
-      await loadScript("https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/fr_FR/appleid.auth.js");
+      await loadScript(`https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/${J.lang() === "fr" ? "fr_FR" : "en_US"}/appleid.auth.js`);
       const nonce = randomHex();
       AppleID.auth.init({ clientId: C.appleClientId, scope: "name email", redirectURI: location.origin + "/", usePopup: true, nonce, state: randomHex() });
       const res = await AppleID.auth.signIn();
@@ -56,7 +56,7 @@
       await finish("apple", res.authorization.id_token, nonce, n);
     } catch (e) {
       if (e && e.error === "popup_closed_by_user") return;
-      onError(e instanceof Error ? e : new Error("Connexion Apple annulée"));
+      onError(e instanceof Error ? e : new Error(J.L("Connexion Apple annulée", "Apple sign-in cancelled")));
     }
   };
 
@@ -82,8 +82,8 @@
     history.replaceState(null, "", location.pathname);
     const saved = JSON.parse(sessionStorage.getItem("jlpt-ms") || "null");
     sessionStorage.removeItem("jlpt-ms");
-    if (h.get("error")) { onError(new Error(h.get("error_description") || "Connexion Microsoft annulée")); return true; }
-    if (!saved || saved.state !== h.get("state")) { onError(new Error("Réponse Microsoft inattendue, réessaie.")); return true; }
+    if (h.get("error")) { onError(new Error(h.get("error_description") || J.L("Connexion Microsoft annulée", "Microsoft sign-in cancelled"))); return true; }
+    if (!saved || saved.state !== h.get("state")) { onError(new Error(J.L("Réponse Microsoft inattendue, réessaie.", "Unexpected Microsoft response, please try again."))); return true; }
     await finish("microsoft", h.get("id_token"), saved.nonce);
     return true;
   };
