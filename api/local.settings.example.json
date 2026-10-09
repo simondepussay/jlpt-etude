@@ -1,0 +1,12 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "AzureWebJobsStorage": "",
+    "STORAGE_CONNECTION": "<chaîne de connexion du compte de stockage>",
+    "SESSION_SECRET": "<64 caractères aléatoires>",
+    "GOOGLE_CLIENT_ID": "",
+    "APPLE_CLIENT_IDS": "",
+    "MICROSOFT_CLIENT_ID": ""
+  }
+}

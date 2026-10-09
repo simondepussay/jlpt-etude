@@ -1,0 +1,17 @@
+{
+  "name": "jlpt-etude-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "API JLPT Étude : comptes (Google, Apple, Microsoft) et sauvegarde de la progression",
+  "main": "src/functions/*.js",
+  "scripts": {
+    "start": "func start",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.5.1",
+    "@azure/storage-blob": "^12.25.0",
+    "jose": "^5.9.6"
+  },
+  "engines": { "node": ">=20" }
+}

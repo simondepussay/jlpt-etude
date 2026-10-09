@@ -1,0 +1,6 @@
+node_modules/
+api/local.settings.json
+.DS_Store
+*.log
+.python_version
+__pycache__/
