@@ -131,7 +131,7 @@
         <div class="lesson-body"><h2 class="hand">おつかれさま！<small>Leçon du jour terminée</small></h2>
           <p>${L.ok} bonnes réponses · ${L.ko} erreurs.</p>
           <p class="muted">Demain : environ ${J.MOD_ORDER.reduce((a, m) => a + J.dueList(m, J.addDays(J.today(), 1)).length, 0)} révisions prévues.</p>
-          <div class="row"><button class="btn" data-act="exam-start">Examen blanc</button><button class="btn" data-act="nav" data-v="mod-g">Revoir la grammaire</button></div></div>
+          <div class="row"><button class="btn" data-act="exam-start">Petit test</button><button class="btn" data-act="nav" data-v="mod-g">Revoir la grammaire</button></div></div>
         ${stamp("済", J.today(), "big")}</div>`;
     } else if (L) {
       const left = L.queue.slice(L.pos).filter((i) => !i.skip);
@@ -154,7 +154,7 @@
             ${ttRow("新出", "Apprendre", sum("newLeft"), MOD_ORDER.map((m) => plan.mods[m].newLeft))}
             ${ttRow("小テスト", "Tester", sum("test"), MOD_ORDER.map((m) => plan.mods[m].test))}
           </ol>
-          ${total ? `<button class="btn primary big" data-act="lesson-start" autofocus>はじめる <span>Commencer</span></button>` : `<p>Rien de prévu aujourd’hui.</p><button class="btn" data-act="exam-start">Examen blanc</button>`}
+          ${total ? `<button class="btn primary big" data-act="lesson-start" autofocus>はじめる <span>Commencer</span></button>` : `<p>Rien de prévu aujourd’hui.</p><button class="btn" data-act="exam-start">Petit test</button>`}
           ${plan.capped ? `<p class="muted small">Limitée à ${fmtMin(J.S.settings.maxMinutes)} (ton réglage).</p>` : ""}</div></div>`;
     }
     return `<section class="hero">${himekuri}${sheet}</section>
@@ -302,7 +302,7 @@
       <div class="card"><h3>Calendrier</h3>${heatmap()}</div>
       <div class="grid3">${MOD_ORDER.map((m) => { const w = J.weak(m, 8);
         return `<div class="card"><h3>Points faibles · ${MODS[m].fr}</h3>${w.length ? w.map((x) => `<button class="weak" data-act="open-item" data-m="${m}" data-id="${esc(x.id)}"><span class="jp">${esc(m === "v" ? x.w : m === "k" ? x.k : x.p)}</span><span class="muted">✗ ${J.rec(m, x.id).ko}</span></button>`).join("") : `<p class="muted">Aucun pour l’instant.</p>`}</div>`; }).join("")}</div>
-      <div class="row"><button class="btn primary" data-act="exam-start">Examen blanc (30 questions)</button></div>`;
+      <div class="row"><button class="btn primary" data-act="exam-start">Petit test (30 questions)</button></div>`;
   };
 
   function heatmap() {
@@ -423,7 +423,7 @@
       if (pool.length < 10) pool = pool.concat(J.items[m].slice(0, 80));
       J.shuffle([...new Map(pool.map((x) => [x.id, x])).values()]).slice(0, 10).forEach((x) => q.push({ s: "test", m, id: x.id, free: true }));
     }
-    R = { type: "practice", title: "模擬試験 · Examen blanc", queue: q, pos: 0, fix: {}, ok: 0, ko: 0, errors: [], started: Date.now(), timed: true, noFix: true };
+    R = { type: "practice", title: "ミニテスト · Petit test", queue: q, pos: 0, fix: {}, ok: 0, ko: 0, errors: [], started: Date.now(), timed: true, noFix: true };
     EX = null;
     J.go("run");
   }

@@ -44,6 +44,9 @@
     return shuffle([...s]);
   }
 
+  const TRAD = (window.DATA || {})["N1-grammaire-trad"] || {};
+  const trad = (jp) => (TRAD[jp] ? `<p class="fr-trad">${esc(TRAD[jp])}</p>` : "");
+
   /* ───────── Fiches de réponse ───────── */
   J.vocabBack = (v) =>
     `<div class="ans-card"><div class="ans-word jp" lang="ja">${esc(v.w)}</div><div class="ans-read jp" lang="ja">${esc(v.r)}</div><div class="ans-mean">${esc(v.m)}</div>
@@ -150,7 +153,7 @@
       const [q, c] = pick(g.q);
       const full = q.includes("＿＿＿") ? esc(q).replace("＿＿＿", `<mark>${esc(c[0])}</mark>`) : "";
       return { mode: "choice", prompt: `<p class="q-help">（　）に入る最もよいものを選びなさい。</p><div class="sentence jp" lang="ja">${esc(q).replace("＿＿＿", '<span class="blank">（　　　）</span>')}</div>`,
-        options: shuffle(c), answer: c[0], back: J.gramBack(g, full ? `<div class="sentence small jp" lang="ja">${full}</div>` : ""), say: full ? q.replace("＿＿＿", c[0]) : "", jpOpts: true };
+        options: shuffle(c), answer: c[0], back: J.gramBack(g, full ? `<div class="sentence small jp" lang="ja">${full}</div>${trad(q.replace("＿＿＿", c[0]))}` : ""), say: full ? q.replace("＿＿＿", c[0]) : "", jpOpts: true };
     },
     "g-cloze": (g) => {
       const [jp, fr] = pick(g.ex);
@@ -162,18 +165,18 @@
       const same = otherItems("g", g.id, 3, (x) => x.cat === g.cat);
       const opts = uniqueOptions(g.p, same.map((x) => x.p).concat(otherItems("g", g.id, 6).map((x) => x.p)));
       return { mode: "choice", prompt: `<p class="q-help">Quelle forme exprime ce sens ?</p><div class="big-fr">${esc(g.s)}</div>`,
-        options: opts, answer: g.p, back: J.gramBack(g, `<div class="sentence small jp" lang="ja">${hl(g.ex[0][0])}</div>`), jpOpts: true };
+        options: opts, answer: g.p, back: J.gramBack(g, `<div class="sentence small jp" lang="ja">${hl(g.ex[0][0])}</div><p class="fr-trad">${esc(g.ex[0][1])}</p>`), jpOpts: true };
     },
     "g-ord": (g) => {
       const [pre, pcs, post, star] = g.o;
       const full = pre + pcs.join("") + post;
       return { mode: "order", pre, post, pieces: pcs, star, order: shuffle([0, 1, 2, 3]), picks: [],
         prompt: `<p class="q-help">次の文の ★ に入る最もよいものを選べるよう、並べ替えなさい。</p>`,
-        back: J.gramBack(g, `<div class="sentence small jp" lang="ja">${esc(pre)}${pcs.map((p, i) => (i === star ? `<mark>${esc(p)}</mark>` : esc(p))).join("")}${esc(post)}</div>`), say: full };
+        back: J.gramBack(g, `<div class="sentence small jp" lang="ja">${esc(pre)}${pcs.map((p, i) => (i === star ? `<mark>${esc(p)}</mark>` : esc(p))).join("")}${esc(post)}</div>${trad(full)}`), say: full };
     },
     "g-flash": (g) => ({
       mode: "self", prompt: `<p class="q-help">Donne le sens et la construction, puis vérifie.</p><div class="big-jp jp" lang="ja">${esc(g.p)}</div>`,
-      back: J.gramBack(g, `<div class="sentence small jp" lang="ja">${hl(g.ex[0][0])}</div>`), say: g.ex[0][0]
+      back: J.gramBack(g, `<div class="sentence small jp" lang="ja">${hl(g.ex[0][0])}</div><p class="fr-trad">${esc(g.ex[0][1])}</p>`), say: g.ex[0][0]
     })
   };
 
