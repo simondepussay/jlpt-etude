@@ -30,6 +30,8 @@ def header_row(ws):
     return 2
 
 ORDER = ["N5", "N4", "N3", "N2", "N1"]
+# Corrections de sens anglais cassés dans la liste source (« #NAME? » d’Excel)
+EN_FIX = {"歳": "age, -years-old", "ヶ月": "month(s) (counter)"}
 
 def lower_words(wb, lvl, sheet):
     """Mots/kanji déjà présents dans les niveaux inférieurs (la liste Coto contient des doublons)."""
@@ -57,6 +59,8 @@ def main(path, levels):
             if key in seen or w in lowv:
                 continue
             seen.add(key)
+            if m.startswith("#") or not m:
+                m = EN_FIX.get(w, m)
             vocab.append({"w": w, "r": r, "m": m})
         (DATA / f"{L}-vocab.js").write_text(
             f"window.DATA=window.DATA||{{}};window.DATA['{lvl}-vocab']=" + json.dumps(vocab, ensure_ascii=False, separators=(",", ":")) + ";\n", encoding="utf-8")
