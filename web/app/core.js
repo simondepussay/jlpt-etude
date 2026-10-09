@@ -15,9 +15,10 @@
   const vocab = (D[J.LEVEL + "-vocab"] || []).map((x) => ({ ...x, id: x.w + "|" + x.r }));
   const kanji = (D[J.LEVEL + "-kanji"] || []).map((x) => ({ ...x, id: x.k }));
   const gram = (D[J.LEVEL + "-grammaire"] || []).slice().sort((a, b) => a.n - b.n).map((x) => ({ ...x, id: String(x.n) }));
-  J.items = { v: vocab, k: kanji, g: gram };
+  J.all = { v: vocab, k: kanji, g: gram };
+  J.items = { v: vocab, k: kanji, g: gram }; // sans les éléments retirés par l’utilisateur
   J.byId = {};
-  for (const m of J.MOD_ORDER) J.byId[m] = Object.fromEntries(J.items[m].map((x) => [x.id, x]));
+  for (const m of J.MOD_ORDER) J.byId[m] = Object.fromEntries(J.all[m].map((x) => [x.id, x]));
   J.gcats = D[J.LEVEL + "-grammaire-cats"] || [];
 
   // kanji → mots du vocabulaire qui le contiennent
@@ -76,6 +77,7 @@
     days: {},
     timing: JSON.parse(JSON.stringify(DEFAULT_TIMING)),
     notes: {},
+    excluded: {},
     lesson: null,
     paceAck: null
   });
@@ -158,6 +160,8 @@
       out.days[d] = m;
     }
     out.notes = { ...b.notes, ...a.notes, ...newer.notes };
+    const older = newer === a ? b : a;
+    out.excluded = { ...(older.excluded || {}), ...(newer.excluded || {}) };
     return out;
   };
 
@@ -184,6 +188,7 @@
     }
     J.S = state || J.defaultState();
     if (s) J.S.owner = s.user.id;
+    J.refreshItems();
     if (s && J.store.status === "ok") J.save(true);
   };
 
@@ -235,6 +240,7 @@
     try { localStorage.removeItem(LS_KEY); } catch (e) {}
     J.store = { mode: "local", status: "idle", lastSave: null, error: null, user: null };
     J.S = J.defaultState();
+    J.refreshItems();
   };
   J.dropSession = function () { sessSet(null); J.store.mode = "local"; J.store.expired = false; J.store.error = null; J.store.user = null; };
   J.deleteAccount = async function () {
@@ -256,7 +262,20 @@
     const owner = J.S.owner;
     J.S = migrate(o);
     if (owner) J.S.owner = owner;
+    J.refreshItems();
     J.save(true);
+  };
+
+  /* Éléments retirés (« Pas du N1 ») */
+  J.isExcluded = (m, id) => !!(J.S.excluded || {})[m + ":" + id];
+  J.refreshItems = function () {
+    for (const m of J.MOD_ORDER) J.items[m] = J.all[m].filter((x) => !J.isExcluded(m, x.id));
+  };
+  J.setExcluded = function (m, id, on) {
+    J.S.excluded = J.S.excluded || {};
+    J.S.excluded[m + ":" + id] = on;
+    J.refreshItems();
+    J.save();
   };
 
   /* ───────── Répétition espacée ───────── */

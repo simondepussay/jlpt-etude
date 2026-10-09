@@ -29,10 +29,23 @@ def header_row(ws):
             return i
     return 2
 
+ORDER = ["N5", "N4", "N3", "N2", "N1"]
+
+def lower_words(wb, lvl, sheet):
+    """Mots/kanji déjà présents dans les niveaux inférieurs (la liste Coto contient des doublons)."""
+    out = set()
+    for low in ORDER[:ORDER.index(lvl)]:
+        ws = wb[f"{low} {sheet}"]
+        for r in ws.iter_rows(values_only=True):
+            if r and r[0] and str(r[0]).strip() not in ("Kanji",) and not str(r[0]).startswith("="):
+                out.add(str(r[0]).strip())
+    return out
+
 def main(path, levels):
     wb = openpyxl.load_workbook(path, read_only=True)
     for lvl in levels:
         L = lvl.lower()
+        lowv, lowk = lower_words(wb, lvl, "Vocab"), lower_words(wb, lvl, "Kanji")
         # Vocabulaire
         ws = wb[f"{lvl} Vocab"]
         seen, vocab = set(), []
@@ -41,7 +54,7 @@ def main(path, levels):
                 continue
             w = w or r
             key = f"{w}|{r}"
-            if key in seen:
+            if key in seen or w in lowv:
                 continue
             seen.add(key)
             vocab.append({"w": w, "r": r, "m": m})
@@ -51,7 +64,7 @@ def main(path, levels):
         ws = wb[f"{lvl} Kanji"]
         kanji, seen = [], set()
         for k, p, m in rows(ws, header_row(ws) + 1):
-            if not k or k.startswith("=") or k in seen:
+            if not k or k.startswith("=") or k in seen or k in lowk:
                 continue
             seen.add(k)
             parts = [x.strip() for x in re.split(r"[・、,]", p) if x.strip()]

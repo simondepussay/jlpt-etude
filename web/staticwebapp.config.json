@@ -9,7 +9,7 @@
     { "route": "/data/*", "headers": { "Cache-Control": "public, max-age=3600" } }
   ],
   "globalHeaders": {
-    "Content-Security-Policy": "default-src 'self'; script-src 'self' https://accounts.google.com/gsi/client https://appleid.cdn-apple.com; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style; frame-src https://accounts.google.com https://appleid.apple.com; connect-src 'self' https://accounts.google.com/gsi/ https://appleid.apple.com; img-src 'self' data: https://*.googleusercontent.com; font-src 'self'; base-uri 'self'; form-action 'self' https://appleid.apple.com; frame-ancestors 'none'",
+    "Content-Security-Policy": "default-src 'self'; script-src 'self' https://accounts.google.com/gsi/client https://appleid.cdn-apple.com; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; frame-src https://accounts.google.com https://appleid.apple.com; connect-src 'self' https://accounts.google.com/gsi/ https://appleid.apple.com; img-src 'self' data: https://*.googleusercontent.com; font-src 'self' https://fonts.gstatic.com; base-uri 'self'; form-action 'self' https://appleid.apple.com; frame-ancestors 'none'",
     "X-Content-Type-Options": "nosniff",
     "Referrer-Policy": "strict-origin-when-cross-origin",
     "Permissions-Policy": "camera=(), microphone=(), geolocation=()"

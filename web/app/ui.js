@@ -36,7 +36,7 @@
     const st = u
       ? `<button class="save ${bad ? "err" : "ok"} ${cur === "account" ? "on" : ""}" data-act="nav" data-v="account" title="${esc(J.store.error || "Progression synchronisée sur ton compte")}">${bad ? "⚠︎" : "●"} ${esc(u.name || u.email || "Mon compte")}</button>`
       : `<button class="save warn ${cur === "account" ? "on" : ""}" data-act="nav" data-v="account" title="Sans compte, la progression reste dans ce navigateur">Se connecter</button>`;
-    return `<header class="top"><div class="brand"><span class="logo jp">日</span><span>JLPT Étude <b>${J.LEVEL}</b></span></div>
+    return `<header class="top"><div class="brand"><span class="hanko" aria-hidden="true">日本<br>語</span><span class="brand-t">JLPT Étude<b>${J.LEVEL}</b></span></div>
       <nav>${tabs.map(([v, jp, fr]) => `<button class="tab ${cur === v ? "on" : ""}" data-act="nav" data-v="${v}"><span class="jp">${jp}</span><span class="tfr">${fr}</span></button>`).join("")}</nav>${st}</header>`;
   }
 
@@ -92,66 +92,113 @@
   }
 
   /* Accueil */
+  /* ───────── Formes dessinées (SVG) ───────── */
+  // Ensō : cercle au pinceau ; part = fraction tracée (0–1)
+  const enso = (part, inner) => {
+    const C = 2 * Math.PI * 44, d = Math.max(0.04, Math.min(1, part)) * C * 0.94;
+    return `<div class="enso"><svg viewBox="0 0 100 100" aria-hidden="true">
+      <circle class="enso-ghost" cx="50" cy="50" r="44"/>
+      <circle class="enso-ink" cx="50" cy="50" r="44" stroke-dasharray="${d.toFixed(1)} ${C.toFixed(1)}" transform="rotate(-70 50 50)"/>
+      <circle class="enso-ink thin" cx="50.6" cy="49.4" r="41.5" stroke-dasharray="${(d * 0.8).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-64 50 50)"/>
+    </svg><div class="enso-in">${inner}</div></div>`;
+  };
+  const HANAMARU = `<svg class="mark hanamaru" viewBox="0 0 100 100" aria-hidden="true"><path pathLength="1" d="M58 16C30 12 10 36 16 60c6 26 46 34 66 14 18-18 6-50-20-50-22 0-34 22-24 38 10 14 32 10 32-6 0-10-12-14-18-8"/><path pathLength="1" class="petal" d="M14 58c-8 8-6 22 6 22M84 70c10 4 12 16 4 22M86 26c10-4 14 6 8 14M30 14c-6-8 4-14 10-8"/></svg>`;
+  const BATSU = `<svg class="mark batsu" viewBox="0 0 100 100" aria-hidden="true"><path pathLength="1" d="M18 86C40 60 62 36 86 12"/></svg>`;
+  const CIRCLED = ["①", "②", "③", "④", "⑤", "⑥"];
+  const rot = (seed) => { let h = 0; for (const c of String(seed)) h = (h * 31 + c.charCodeAt(0)) | 0; return ((h % 17) - 8); };
+  const stamp = (txt, seed, cls = "") => `<span class="stamp ${cls}" style="--r:${rot(seed)}deg">${txt}</span>`;
+  const WEEKDAY = ["日", "月", "火", "水", "木", "金", "土"];
+
+  /* Accueil */
   VIEWS.home = () => {
     const plan = J.plan(), proj = J.projection(), warn = J.paceWarning();
     const L = J.S.lesson && J.S.lesson.date === J.today() ? J.S.lesson : null;
     const done = L && L.pos >= L.queue.length;
-    const streak = J.streak();
-    let lessonCard;
+    const now = new Date();
+    const himekuri = `<div class="himekuri" aria-label="${J.fmtDate(J.today())}">
+        <div class="hm-rings"><i></i><i></i></div>
+        <div class="hm-top"><span>${now.getFullYear()}</span><span>令和${now.getFullYear() - 2018}年</span></div>
+        <div class="hm-month">${now.getMonth() + 1}<small>月</small></div>
+        <div class="hm-day">${now.getDate()}</div>
+        <div class="hm-wd">${WEEKDAY[now.getDay()]}曜日</div>
+        <div class="hm-foot">JLPT ${J.LEVEL}まで あと<b>${Math.max(0, plan.examIn)}</b>日</div>
+      </div>`;
+    let sheet;
     if (done) {
-      lessonCard = `<div class="card lesson done"><h2>今日のレッスン完了 <small>Leçon du jour terminée</small></h2>
-        <p>${L.ok} bonnes réponses · ${L.ko} erreurs · ${fmtMin(Math.round(J.day().sec / 60))} d’étude aujourd’hui.</p>
-        <p class="muted">Demain : environ ${J.MOD_ORDER.reduce((a, m) => a + J.dueList(m, J.addDays(J.today(), 1)).length, 0)} révisions prévues.</p>
-        <div class="row"><button class="btn" data-act="exam-start">Examen blanc</button><button class="btn" data-act="nav" data-v="mod-g">Revoir la grammaire</button></div></div>`;
+      sheet = `<div class="sheet lesson done">
+        <div class="sheet-side">今日の勉強</div>
+        ${enso(1, `<b>${fmtMin(Math.round(J.day().sec / 60)).replace(" min", "")}</b><span>分</span>`)}
+        <div class="lesson-body"><h2 class="hand">おつかれさま！<small>Leçon du jour terminée</small></h2>
+          <p>${L.ok} bonnes réponses · ${L.ko} erreurs.</p>
+          <p class="muted">Demain : environ ${J.MOD_ORDER.reduce((a, m) => a + J.dueList(m, J.addDays(J.today(), 1)).length, 0)} révisions prévues.</p>
+          <div class="row"><button class="btn" data-act="exam-start">Examen blanc</button><button class="btn" data-act="nav" data-v="mod-g">Revoir la grammaire</button></div></div>
+        ${stamp("済", J.today(), "big")}</div>`;
     } else if (L) {
       const left = L.queue.slice(L.pos).filter((i) => !i.skip);
       const cnt = (s) => left.filter((i) => i.s === s).length;
-      lessonCard = `<div class="card lesson"><h2>今日のレッスン <small>Leçon du jour en cours</small></h2>
-        <div class="stages">${stageChip("Réviser", cnt("rev"))}${stageChip("Apprendre", cnt("learn"))}${stageChip("Tester", cnt("test"))}${stageChip("Rattrapage", cnt("fix"))}</div>
-        <div class="progress"><span style="width:${pct(L.pos, L.queue.length)}%"></span></div>
-        <button class="btn primary big" data-act="lesson-start" autofocus>Reprendre la leçon</button></div>`;
+      sheet = `<div class="sheet lesson">
+        <div class="sheet-side">今日の勉強</div>
+        ${enso(L.pos / L.queue.length, `<b>${pct(L.pos, L.queue.length)}</b><span>%</span>`)}
+        <div class="lesson-body"><h2 class="hand">つづき<small>Leçon en cours</small></h2>
+          <ol class="timetable">${ttRow("復習", "Réviser", cnt("rev"))}${ttRow("新出", "Apprendre", cnt("learn"))}${ttRow("小テスト", "Tester", cnt("test"))}${ttRow("やり直し", "Rattrapage", cnt("fix"))}</ol>
+          <button class="btn primary big" data-act="lesson-start" autofocus>Reprendre <span class="jp">→</span></button></div></div>`;
     } else {
-      const total = MOD_ORDER.reduce((a, m) => a + plan.mods[m].due + plan.mods[m].newLeft + plan.mods[m].test, 0);
-      lessonCard = `<div class="card lesson"><h2>今日のレッスン <small>Leçon du jour · ≈ ${fmtMin(plan.minutes)}</small></h2>
-        ${planTable(plan, false)}
-        ${total ? `<button class="btn primary big" data-act="lesson-start" autofocus>Commencer la leçon</button>` : `<p>Rien de prévu aujourd’hui.</p><button class="btn" data-act="exam-start">Examen blanc</button>`}
-        ${plan.capped ? `<p class="muted small">Leçon limitée à ${fmtMin(J.S.settings.maxMinutes)} (ton réglage).</p>` : ""}</div>`;
+      const sum = (k) => MOD_ORDER.reduce((a, m) => a + plan.mods[m][k], 0);
+      const total = sum("due") + sum("newLeft") + sum("test");
+      sheet = `<div class="sheet lesson">
+        <div class="sheet-side">今日の勉強</div>
+        ${enso(Math.min(1, plan.minutes / Math.max(15, J.S.settings.maxMinutes || 60)), `<b>${plan.minutes}</b><span>分</span>`)}
+        <div class="lesson-body"><h2 class="hand">今日のレッスン<small>Leçon du jour · environ ${fmtMin(plan.minutes)}</small></h2>
+          <ol class="timetable">
+            ${ttRow("復習", "Réviser", sum("due"), MOD_ORDER.map((m) => plan.mods[m].due))}
+            ${ttRow("新出", "Apprendre", sum("newLeft"), MOD_ORDER.map((m) => plan.mods[m].newLeft))}
+            ${ttRow("小テスト", "Tester", sum("test"), MOD_ORDER.map((m) => plan.mods[m].test))}
+          </ol>
+          ${total ? `<button class="btn primary big" data-act="lesson-start" autofocus>はじめる <span>Commencer</span></button>` : `<p>Rien de prévu aujourd’hui.</p><button class="btn" data-act="exam-start">Examen blanc</button>`}
+          ${plan.capped ? `<p class="muted small">Limitée à ${fmtMin(J.S.settings.maxMinutes)} (ton réglage).</p>` : ""}</div></div>`;
     }
-    return `<section class="hello"><div><div class="jp date">${J.jpDate()}</div>
-        <div class="muted">JLPT ${J.LEVEL} : ${J.fmtDate(J.S.settings.examDate)} · <b>J-${Math.max(0, plan.examIn)}</b></div></div>
-        <div class="streak" title="Jours d’étude consécutifs">🔥 <b>${streak}</b> <span>jour${streak > 1 ? "s" : ""}</span></div></section>
-      ${warn ? `<div class="card alert"><b>Ton rythme réel est différent de ton planning.</b>
+    return `<section class="hero">${himekuri}${sheet}</section>
+      ${warn ? `<div class="sheet alert"><div class="alert-mark">!</div><div><b>Ton rythme réel est différent de ton planning.</b>
         <p>Tu as prévu <b>${warn.planned} jours</b> d’étude par semaine, mais sur les dernières semaines tu en fais en moyenne <b>${String(warn.measured).replace(".", ",")}</b>. Les leçons sont calculées pour ${warn.planned} jours : en étudiant moins souvent, tu prends du retard.</p>
-        <div class="row"><button class="btn primary" data-act="pace-adapt" data-n="${warn.suggest}">Adapter les leçons à ${warn.suggest} j/sem</button><button class="btn" data-act="pace-keep">Je garde ${warn.planned} j/sem</button></div></div>` : ""}
-      ${lessonCard}
-      <div class="grid3">${MOD_ORDER.map((m) => modSummary(m, plan, proj)).join("")}</div>
+        <div class="row"><button class="btn primary" data-act="pace-adapt" data-n="${warn.suggest}">Adapter les leçons à ${warn.suggest} j/sem</button><button class="btn" data-act="pace-keep">Je garde ${warn.planned} j/sem</button></div></div></div>` : ""}
+      <section class="tickets">${MOD_ORDER.map((m) => modSummary(m, plan, proj)).join("")}</section>
       ${weekStrip()}`;
   };
-  const stageChip = (t, n) => `<span class="chip ${n ? "" : "off"}">${t} <b>${n}</b></span>`;
+  // Ligne d’emploi du temps : total + détail par module
+  const ttRow = (jp, fr, n, per) => `<li class="${n ? "" : "off"}"><span class="tt-jp">${jp}</span><span class="tt-fr">${fr}</span>
+    ${per ? `<span class="tt-per">${per.map((x, i) => (x ? `<i class="m-${MOD_ORDER[i]}">${MODS[MOD_ORDER[i]].jp[0]}${x}</i>` : "")).join("")}</span>` : ""}<b>${n}</b></li>`;
 
+  const KANJI_MARK = { v: "語", k: "漢", g: "文" };
   function modSummary(m, plan, proj) {
     const p = plan.mods[m], pr = proj[m];
-    let status;
-    if (p.remaining === 0) status = `<span class="pill good">Tout vu ✓</span>`;
-    else if (!pr.finish) status = `<span class="pill">Pas encore commencé</span>`;
-    else if (pr.onTime) status = `<span class="pill good">Dans les temps</span>`;
-    else status = `<span class="pill bad">Retard ≈ ${Math.ceil(pr.late / 7)} sem.</span>`;
-    return `<button class="card mod" data-act="nav" data-v="mod-${m}">
-      <div class="mod-h"><span class="jp big">${MODS[m].jp}</span><span>${MODS[m].fr}</span>${status}</div>
-      ${bar(p.levels, p.total)}
-      <div class="mod-n"><b>${p.learned}</b> / ${p.total} ${MODS[m].unit} vus · ${p.levels[3]} maîtrisés</div>
-      <div class="muted small">${pr.finish ? `Au rythme ${pr.measured ? "actuel" : "prévu"} (${String(pr.perStudyDay).replace(".", ",")}/jour d’étude) : fin le ${J.fmtShort(pr.finish)}` : "—"}</div>
-    </button>`;
+    let st;
+    if (p.remaining === 0) st = stamp("完了", m + "done", "ok") + `<span class="st-fr">Tout vu</span>`;
+    else if (!pr.finish) st = stamp("未着手", m, "grey") + `<span class="st-fr">Pas commencé</span>`;
+    else if (pr.onTime) st = stamp("順調", m, "ok") + `<span class="st-fr">Dans les temps</span>`;
+    else st = stamp("遅れ", m) + `<span class="st-fr">Retard ≈ ${Math.ceil(pr.late / 7)} sem.</span>`;
+    return `<button class="ticket t-${m}" data-act="nav" data-v="mod-${m}">
+      <span class="t-stub"><span class="t-kanji">${KANJI_MARK[m]}</span><span class="t-no">No.${m === "v" ? "01" : m === "k" ? "02" : "03"}</span></span>
+      <span class="t-body">
+        <span class="t-head"><span class="jp t-jp">${MODS[m].jp}</span><span class="t-fr">${MODS[m].fr}</span></span>
+        ${bar(p.levels, p.total)}
+        <span class="t-n"><b>${p.learned}</b><small>/ ${p.total} ${MODS[m].unit}</small></span>
+        <span class="t-meta">${p.levels[3]} maîtrisés${pr.finish ? ` · fin prévue ${J.fmtShort(pr.finish)}` : ""}</span>
+        <span class="t-status">${st}</span>
+      </span></button>`;
   }
 
   function weekStrip() {
     const days = [];
     for (let i = 6; i >= 0; i--) days.push(J.addDays(J.today(), -i));
-    return `<div class="card week"><h3>Cette semaine</h3><div class="wk">${days.map((d) => {
-      const x = J.S.days[d], min = x ? Math.round(x.sec / 60) : 0;
-      return `<div class="wd ${J.studied(d) ? "on" : ""}"><span>${"日月火水木金土"[J.parse(d).getDay()]}</span><b>${min ? min + "′" : "·"}</b></div>`;
-    }).join("")}</div>
-      <p class="muted small">Prévu : ${J.S.settings.daysPerWeek} j/sem · Réel (4 sem.) : ${J.measuredDPW() ?? "pas encore assez de données"}</p></div>`;
+    const streak = J.streak();
+    return `<section class="stampcard">
+      <div class="sc-head"><h3 class="hand">がんばりカード</h3><span class="muted small">Carte de tampons · prévu ${J.S.settings.daysPerWeek} j/sem · réel ${J.measuredDPW() ?? "—"}</span>
+        <span class="sc-streak"><b>${streak}</b>日連続</span></div>
+      <div class="sc-grid">${days.map((d) => {
+        const x = J.S.days[d], min = x ? Math.round(x.sec / 60) : 0, today = d === J.today();
+        return `<div class="sc-cell ${today ? "today" : ""}"><span class="sc-wd">${WEEKDAY[J.parse(d).getDay()]}<small>${J.parse(d).getDate()}</small></span>
+          <span class="sc-slot">${J.studied(d) ? stamp("済", d) : ""}</span><span class="sc-min">${min ? min + " min" : ""}</span></div>`;
+      }).join("")}</div></section>`;
   }
 
   /* Pages module */
@@ -162,9 +209,10 @@
       <div class="legend">${J.LEVELS.map((l, i) => `<span><i class="lv${i}"></i>${l} ${c.levels[i]}</span>`).join("")}${acc !== null ? `<span>Réussite ${Math.round(acc * 100)} %</span>` : ""}</div></div>
       <div class="row"><button class="btn primary" data-act="practice" data-m="${m}">S’entraîner</button><button class="btn" data-act="mod-test" data-m="${m}">Test JLPT ${MODS[m].fr.toLowerCase()}</button>
       ${m === "g" ? `<a class="btn" href="Fiches-grammaire-N1.html" target="_blank">Fiches imprimables</a>` : ""}</div></section>`;
-    const filters = [["all", "Tous"], ["0", "Nouveaux"], ["1", "En cours"], ["2", "Acquis"], ["3", "Maîtrisés"], ["weak", "Points faibles"], ["due", "À réviser"]];
+    const filters = [["all", "Tous"], ["0", "Nouveaux"], ["1", "En cours"], ["2", "Acquis"], ["3", "Maîtrisés"], ["weak", "Points faibles"], ["due", "À réviser"]].concat(m !== "g" ? [["out", "Retirés"]] : []);
     let list = J.items[m];
-    if (f === "weak") list = J.weak(m, 300);
+    if (f === "out") list = J.all[m].filter((x) => J.isExcluded(m, x.id));
+    else if (f === "weak") list = J.weak(m, 300);
     else if (f === "due") { const d = new Set(J.dueList(m)); list = list.filter((x) => d.has(x.id)); }
     else if (f !== "all") list = list.filter((x) => J.levelOf(m, x.id) === +f);
     if (q) {
@@ -195,11 +243,14 @@
   /* Fiche d’un élément */
   VIEWS.item = ({ m, id }) => {
     const r = J.rec(m, id), lv = J.levelOf(m, id);
-    const list = J.items[m], idx = list.findIndex((x) => x.id === id);
+    const list = J.all[m], idx = list.findIndex((x) => x.id === id);
     const prev = list[idx - 1], next = list[idx + 1];
     const stat = r && r.at ? `<div class="stat-line"><span class="pill lv${lv}">${J.LEVELS[lv]}</span><span>Appris le ${J.fmtShort(r.at)}</span><span>Prochaine révision : ${r.due ? J.fmtShort(r.due) : "—"}</span><span>✓ ${r.ok} · ✗ ${r.ko}</span></div>`
       : `<div class="stat-line"><span class="pill">Nouveau</span><button class="btn sm" data-act="known" data-m="${m}" data-id="${esc(id)}">Je le connais déjà</button></div>`;
-    const body = m === "g" ? J.grammarLesson(J.byId.g[id], false) : `<div class="card">${J.learnCard(m, id)}</div>`;
+    const out = J.isExcluded(m, id);
+    const body = (m === "g" ? J.grammarLesson(J.byId.g[id], false) : `<div class="card">${J.learnCard(m, id)}</div>`)
+      + (m !== "g" ? `<div class="row">${out ? `<span class="pill bad">Retiré des leçons</span><button class="btn sm" data-act="exclude" data-m="${m}" data-id="${esc(id)}" data-on="0">Remettre dans le N1</button>`
+        : `<button class="link" data-act="exclude" data-m="${m}" data-id="${esc(id)}" data-on="1">Pas du N1 : retirer des leçons</button>`}</div>` : "");
     return `<div class="item-nav"><button class="link" data-act="nav" data-v="mod-${m}">← ${MODS[m].fr}</button>
       <span>${prev ? `<button class="btn sm" data-act="open-item" data-m="${m}" data-id="${esc(prev.id)}">←</button>` : ""}
       ${next ? `<button class="btn sm" data-act="open-item" data-m="${m}" data-id="${esc(next.id)}">→</button>` : ""}</span></div>
@@ -385,15 +436,15 @@
     const it = R.queue[R.pos];
     const head = `<div class="run-head"><button class="link" data-act="quit">✕ Quitter</button><span class="run-title jp">${esc(R.title)}</span>
       ${R.timed ? `<span id="timer" class="timer">${fmtClock((Date.now() - R.started) / 1000)}</span>` : `<span class="muted">${Math.min(R.pos + 1, R.queue.length)} / ${R.queue.length}</span>`}</div>
-      <div class="progress"><span style="width:${pct(R.pos, R.queue.length)}%"></span></div>`;
+      <div class="progress ruler"><span style="width:${pct(R.pos, R.queue.length)}%"></span></div>`;
     if (!it) return head + finishView();
     if (it.s !== "learn" && (!EX || EX._pos !== R.pos)) { EX = J.makeEx(it.m, it.id, it.s === "fix" ? "rev" : it.s, it.kind); EX._pos = R.pos; }
-    const tag = `<div class="ex-tag"><span class="pill mod-${it.m}"><span class="jp">${MODS[it.m].jp}</span> ${MODS[it.m].fr}</span><span class="pill stage-${it.s}">${STAGE_FR[it.s]}</span>${it.s !== "learn" && EX ? `<span class="muted">${esc(EX.label)}</span>` : ""}</div>`;
+    const tag = `<div class="ex-tag"><span class="pill mod-${it.m}"><span class="jp">${MODS[it.m].jp}</span> ${MODS[it.m].fr}</span><span class="pill stage-${it.s}">${STAGE_FR[it.s]}</span>${it.s !== "learn" && EX ? `<span class="muted">${esc(EX.label)}</span>` : ""}${it.m !== "g" && !it.free ? `<button class="link small ex-out" data-act="exclude-cur" title="Retirer des leçons">Pas du N1 ✕</button>` : ""}</div>`;
     if (it.s === "learn") {
       if (!R.learnT0 || R.learnPos !== R.pos) { R.learnT0 = Date.now(); R.learnPos = R.pos; }
       return head + `<section class="card ex">${`<div class="ex-tag"><span class="pill mod-${it.m}"><span class="jp">${MODS[it.m].jp}</span> ${MODS[it.m].fr}</span><span class="pill stage-learn">Nouveau</span></div>`}
         ${J.learnCard(it.m, it.id)}
-        <div class="row end"><button class="btn" data-act="learn-known">Déjà connu</button><button class="btn primary" data-act="learn-next" autofocus>J’ai compris → Suivant <kbd>↵</kbd></button></div></section>`;
+        <div class="row end">${it.m !== "g" ? `<button class="link" data-act="exclude-cur" title="Retirer ce ${it.m === "v" ? "mot" : "kanji"} des leçons">Pas du N1 ✕</button>` : ""}<button class="btn" data-act="learn-known">Déjà connu</button><button class="btn primary" data-act="learn-next" autofocus>J’ai compris → Suivant <kbd>↵</kbd></button></div></section>`;
     }
     return head + `<section class="card ex">${tag}${exBody(EX)}</section>`;
   };
@@ -404,14 +455,15 @@
       h += `<div class="opts ${ex.bigOpts ? "big" : ""}">${ex.options.map((o, i) => {
         let cls = "";
         if (ex.answered) cls = o === ex.answer ? "ok" : i === ex.chosen ? "ko" : "dim";
-        return `<button class="opt ${cls} ${ex.jpOpts ? "jp" : ""}" data-act="opt" data-i="${i}" ${ex.answered ? "disabled" : ""}><kbd>${i + 1}</kbd>${esc(o)}</button>`;
+        const mark = ex.answered ? (o === ex.answer ? HANAMARU : i === ex.chosen ? BATSU : "") : "";
+        return `<button class="opt ${cls} ${ex.jpOpts ? "jp" : ""}" data-act="opt" data-i="${i}" ${ex.answered ? "disabled" : ""}><span class="bubble">${CIRCLED[i]}</span><span class="opt-t">${esc(o)}</span>${mark}</button>`;
       }).join("")}</div>`;
       if (ex.answered) h += feedback(ex.correct, ex.correct ? "" : ex.answer) + ex.back + contBtn();
     } else if (ex.mode === "self") {
       if (!ex.revealed) h += `<div class="row center"><button class="btn primary" data-act="reveal" autofocus>Afficher la réponse <kbd>espace</kbd></button></div>`;
       else h += ex.back + `<p class="q-help center">Comment t’en es-tu sorti ?</p><div class="grades">
-        <button class="g0" data-act="grade" data-q="0"><kbd>1</kbd>Raté</button><button class="g1" data-act="grade" data-q="1"><kbd>2</kbd>Difficile</button>
-        <button class="g2" data-act="grade" data-q="2"><kbd>3</kbd>Bien</button><button class="g3" data-act="grade" data-q="3"><kbd>4</kbd>Facile</button></div>`;
+        <button class="g0" data-act="grade" data-q="0"><span class="jp">×</span>Raté<kbd>1</kbd></button><button class="g1" data-act="grade" data-q="1"><span class="jp">△</span>Difficile<kbd>2</kbd></button>
+        <button class="g2" data-act="grade" data-q="2"><span class="jp">○</span>Bien<kbd>3</kbd></button><button class="g3" data-act="grade" data-q="3"><span class="jp">◎</span>Facile<kbd>4</kbd></button></div>`;
     } else if (ex.mode === "order") {
       const slots = [0, 1, 2, 3].map((k) => {
         const p = ex.picks[k];
@@ -428,7 +480,7 @@
     }
     return h;
   }
-  const feedback = (ok, ans) => `<div class="fb ${ok ? "ok" : "ko"}">${ok ? "正解！ Correct" : `不正解 · La bonne réponse : <b class="jp">${esc(ans)}</b>`}</div>`;
+  const feedback = (ok, ans) => `<div class="fb ${ok ? "ok" : "ko"}"><span class="fb-jp">${ok ? "正解！" : "ざんねん"}</span><span>${ok ? "Correct" : `La bonne réponse : <b class="jp">${esc(ans)}</b>`}</span></div>`;
   const contBtn = () => `<div class="row end"><button class="btn primary" data-act="cont" autofocus>Continuer <kbd>↵</kbd></button></div>`;
 
   function finishView() {
@@ -512,6 +564,13 @@
       J.addTime(it.m, "learn", (Date.now() - (R.learnT0 || Date.now())) / 1000);
       advance();
     },
+    "exclude-cur": () => {
+      const it = R.queue[R.pos];
+      J.setExcluded(it.m, it.id, true);
+      R.queue.forEach((q, i) => { if (i > R.pos && q.m === it.m && q.id === it.id) q.skip = true; });
+      advance();
+    },
+    exclude: (d) => { J.setExcluded(d.m, d.id, d.on === "1"); render(); },
     "learn-known": () => {
       const it = R.queue[R.pos];
       J.markKnown(it.m, it.id);
