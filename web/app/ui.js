@@ -145,15 +145,15 @@
         <div class="lesson-body"><h2 class="hand">おつかれさま！<small>${L("Leçon du jour terminée", "Today’s lesson done")}</small></h2>
           <p>${L(`${Ls.ok} bonnes réponses · ${Ls.ko} erreurs.`, `${Ls.ok} correct · ${Ls.ko} mistakes.`)}</p>
           <p class="muted">${L("Demain : environ", "Tomorrow: about")} ${J.MOD_ORDER.reduce((a, m) => a + J.dueList(m, J.addDays(J.today(), 1)).length, 0)} ${L("révisions prévues.", "reviews planned.")}</p>
-          <div class="row"><button class="btn" data-act="exam-start">${L("Petit test", "Quick test")}</button><button class="btn" data-act="nav" data-v="mod-g">${L("Revoir la grammaire", "Review grammar")}</button></div></div>
-        ${stamp("済", J.today(), "big")}</div>`;
+          <div class="row">${(Ls.mult || 1) === 1 ? `<button class="btn primary" data-act="lesson-double"><span class="jp">倍</span> ${L("Doubler la journée", "Make it a double day")}</button>` : ""}<button class="btn" data-act="exam-start">${L("Petit test", "Quick test")}</button><button class="btn" data-act="nav" data-v="mod-g">${L("Revoir la grammaire", "Review grammar")}</button></div></div>
+        ${Ls.mult === 2 ? stamp("倍", J.today(), "big gold") : stamp("済", J.today(), "big")}</div>`;
     } else if (Ls) {
       const left = Ls.queue.slice(Ls.pos).filter((i) => !i.skip);
       const cnt = (s) => left.filter((i) => i.s === s).length;
       sheet = `<div class="sheet lesson">
         <div class="sheet-side">今日の勉強</div>
         ${enso(Ls.pos / Ls.queue.length, `<b>${pct(Ls.pos, Ls.queue.length)}</b><span>%</span>`)}
-        <div class="lesson-body"><h2 class="hand">つづき<small>${L("Leçon en cours", "Lesson in progress")}</small></h2>
+        <div class="lesson-body"><h2 class="hand">つづき${Ls.mult === 2 ? ` <span class="badge-x2">×2</span>` : ""}<small>${L("Leçon en cours", "Lesson in progress")}${Ls.mult === 2 ? " · " + L("double journée", "double day") : ""}</small></h2>
           <ol class="timetable">${ttRow("復習", L("Réviser", "Review"), cnt("rev"))}${ttRow("新出", L("Apprendre", "Learn"), cnt("learn"))}${ttRow("小テスト", L("Tester", "Test"), cnt("test"))}${ttRow("やり直し", L("Rattrapage", "Retry"), cnt("fix"))}</ol>
           <button class="btn primary big" data-act="lesson-start" autofocus>${L("Reprendre", "Resume")} <span class="jp">→</span></button></div></div>`;
     } else {
@@ -168,9 +168,13 @@
             ${ttRow("新出", L("Apprendre", "Learn"), sum("newLeft"), MOD_ORDER.map((m) => plan.mods[m].newLeft))}
             ${ttRow("小テスト", L("Tester", "Test"), sum("test"), MOD_ORDER.map((m) => plan.mods[m].test))}
           </ol>
+          <div class="dose"><span class="dose-l">${L("Dose du jour", "Today’s dose")}</span><div class="seg">
+            <button class="${plan.mult === 1 ? "on" : ""}" data-act="set-mult" data-n="1">${L("Normale", "Normal")}</button>
+            <button class="${plan.mult === 2 ? "on" : ""}" data-act="set-mult" data-n="2"><span class="jp">倍</span> ${L("Double", "Double")} ×2</button></div></div>
           ${total ? `<button class="btn primary big" data-act="lesson-start" autofocus>はじめる <span>${L("Commencer", "Start")}</span></button>`
             : `<p>${L("Rien de prévu aujourd’hui.", "Nothing planned today.")}</p><button class="btn" data-act="exam-start">${L("Petit test", "Quick test")}</button>`}
-          ${plan.capped ? `<p class="muted small">${L(`Limitée à ${fmtMin(J.S.settings.maxMinutes)} (ton réglage).`, `Limited to ${fmtMin(J.S.settings.maxMinutes)} (your setting).`)}</p>` : ""}</div></div>`;
+          ${plan.mult === 2 ? `<p class="muted small">${L(`Double journée : deux leçons d’affilée, environ ${fmtMin(plan.minutes)}.`, `Double day: two lessons in a row, about ${fmtMin(plan.minutes)}.`)}</p>`
+            : plan.capped ? `<p class="muted small">${L(`Limitée à ${fmtMin(J.S.settings.maxMinutes)} (ton réglage).`, `Limited to ${fmtMin(J.S.settings.maxMinutes)} (your setting).`)}</p>` : ""}</div></div>`;
     }
     return `<section class="hero">${himekuri}${sheet}</section>
       ${warn ? `<div class="sheet alert"><div class="alert-mark">!</div><div><b>${L("Ton rythme réel est différent de ton planning.", "Your actual pace differs from your plan.")}</b>
@@ -213,7 +217,7 @@
       <div class="sc-grid">${days.map((d) => {
         const x = J.S.days[d], min = x ? Math.round(x.sec / 60) : 0, today = d === J.today();
         return `<div class="sc-cell ${today ? "today" : ""}"><span class="sc-wd">${WEEKDAY[J.parse(d).getDay()]}<small>${J.parse(d).getDate()}</small></span>
-          <span class="sc-slot">${x && x.done ? stamp("済", d) : J.studied(d) ? stamp("途中", d, "grey") : ""}</span><span class="sc-min">${min ? min + " min" : ""}</span></div>`;
+          <span class="sc-slot">${x && x.done ? (x.double ? stamp("倍", d, "gold") : stamp("済", d)) : J.studied(d) ? stamp("途中", d, "grey") : ""}</span><span class="sc-min">${min ? min + " min" : ""}</span></div>`;
       }).join("")}</div></section>`;
   }
 
@@ -395,35 +399,65 @@
   };
 
   /* ───────── Session (leçon / entraînement) ───────── */
-  function buildLesson() {
-    const plan = J.plan(), q = [];
-    for (const m of MOD_ORDER) J.shuffle(J.dueList(m).slice(0, J.S.settings.revCap)).forEach((id) => q.push({ s: "rev", m, id }));
-    const newIds = {};
+  // Nouveaux éléments : fiches par petits paquets, puis vérification immédiate
+  function newPart(plan, skip, count = (m) => plan.mods[m].newLeft) {
+    const q = [], ids = {};
     for (const m of MOD_ORDER) {
-      const ids = J.items[m].filter((x) => !J.isLearned(m, x.id)).slice(0, plan.mods[m].newLeft).map((x) => x.id);
-      newIds[m] = new Set(ids);
+      const list = J.items[m].filter((x) => !J.isLearned(m, x.id) && !skip.has(m + ":" + x.id)).slice(0, count(m)).map((x) => x.id);
+      ids[m] = new Set(list);
       const size = m === "g" ? 2 : 5;
-      for (let i = 0; i < ids.length; i += size) {
-        const chunk = ids.slice(i, i + size);
+      for (let i = 0; i < list.length; i += size) {
+        const chunk = list.slice(i, i + size);
         chunk.forEach((id) => q.push({ s: "learn", m, id }));
         J.shuffle(chunk).forEach((id) => q.push({ s: "check", m, id }));
       }
     }
+    return { q, ids };
+  }
+  // Tests : moitié points faibles, moitié au hasard parmi ce qui est déjà vu
+  function testPart(plan, exclude, count) {
+    const q = [];
     for (const m of MOD_ORDER) {
-      const pool = J.items[m].filter((x) => J.isLearned(m, x.id) && !newIds[m].has(x.id));
-      const weak = J.shuffle(J.weak(m, 50).filter((x) => J.isLearned(m, x.id)));
-      const n = Math.min(J.S.settings.tests[m], pool.length);
+      const pool = J.items[m].filter((x) => J.isLearned(m, x.id) && !exclude.has(m + ":" + x.id));
+      const weak = J.shuffle(J.weak(m, 50).filter((x) => J.isLearned(m, x.id) && !exclude.has(m + ":" + x.id)));
+      const n = Math.min(count(m), pool.length);
       const chosen = new Set(weak.slice(0, Math.ceil(n / 2)).map((x) => x.id));
       for (const x of J.shuffle(pool)) { if (chosen.size >= n) break; chosen.add(x.id); }
       [...chosen].forEach((id) => q.push({ s: "test", m, id }));
     }
-    return { date: J.today(), queue: q, pos: 0, fix: {}, ok: 0, ko: 0, errors: [], started: Date.now() };
+    return q;
   }
+  function buildLesson() {
+    const plan = J.plan(), q = [];
+    for (const m of MOD_ORDER) J.shuffle(J.dueList(m).slice(0, J.S.settings.revCap)).forEach((id) => q.push({ s: "rev", m, id }));
+    const np = newPart(plan, new Set());
+    q.push(...np.q);
+    const fresh = new Set(MOD_ORDER.flatMap((m) => [...np.ids[m]].map((id) => m + ":" + id)));
+    q.push(...testPart(plan, fresh, (m) => plan.mods[m].test));
+    // dose de base mémorisée : une « double journée » refait exactement la même quantité
+    const base = Object.fromEntries(MOD_ORDER.map((m) => [m, { n: np.ids[m].size, t: q.filter((i) => i.s === "test" && i.m === m).length }]));
+    return { date: J.today(), queue: q, pos: 0, fix: {}, ok: 0, ko: 0, errors: [], started: Date.now(), mult: plan.mult, base };
+  }
+  // Doubler une journée déjà commencée ou terminée : ajoute une seconde dose à la suite
+  function extendLesson() {
+    const L0 = J.S.lesson;
+    const plan = J.plan();
+    const base = L0.base || Object.fromEntries(MOD_ORDER.map((m) => [m, { n: plan.mods[m].new, t: plan.mods[m].test }]));
+    J.setTodayMult(2);
+    const inQueue = new Set(L0.queue.map((i) => i.m + ":" + i.id));
+    const np = newPart(plan, inQueue, (m) => base[m].n);
+    const fresh = MOD_ORDER.flatMap((m) => [...np.ids[m]].map((id) => m + ":" + id));
+    const tests = testPart(plan, new Set([...inQueue, ...fresh]), (m) => base[m].t);
+    L0.queue.push(...np.q, ...tests);
+    L0.mult = 2;
+    J.save();
+  }
+
 
   // Titres de session : japonais fixe + traduction selon la langue
   const TITLES = { lesson: "今日のレッスン", practice: "練習", test: "テスト", quick: "ミニテスト" };
   function runTitle() {
-    if (R.type === "lesson") return TITLES.lesson;
+    if (R.type === "lesson") return TITLES.lesson + (R.mult === 2 ? " ×2" : "");
     if (R.kind === "quick") return `${TITLES.quick} · ${L("Petit test", "Quick test")}`;
     if (R.kind === "drill") return `${TITLES.practice} · ${J.byId.g[R.ref].p}`;
     return `${R.kind === "test" ? TITLES.test : TITLES.practice} · ${J.modName(R.ref)}`;
@@ -432,6 +466,7 @@
   function startLesson() {
     if (!J.S.lesson || J.S.lesson.date !== J.today()) { J.S.lesson = buildLesson(); J.save(); }
     R = J.S.lesson; R.type = "lesson"; R.timed = false;
+    if (!R.mult) R.mult = J.todayMult();
     EX = null;
     J.go("run");
   }
@@ -517,7 +552,7 @@
 
   function finishView() {
     const lesson = R.type === "lesson";
-    if (lesson) { J.day().done = true; J.save(true); }
+    if (lesson) { J.day().done = true; if (R.mult === 2) J.day().double = true; J.save(true); }
     const tot = R.ok + R.ko;
     const errs = [...new Map((R.errors || []).map((e) => [e.m + e.id, e])).values()];
     return `<section class="card finish"><h1>${lesson ? "お疲れさまでした！" : "終了！"}</h1>
@@ -572,6 +607,8 @@
     "pace-adapt": (d) => { J.S.settings.daysPerWeek = +d.n; J.S.paceAck = J.today(); J.save(); render(); },
     "pace-keep": () => { J.S.paceAck = J.today(); J.save(); render(); },
     "lesson-start": startLesson,
+    "set-mult": (d) => { J.setTodayMult(+d.n); render(); },
+    "lesson-double": () => { extendLesson(); startLesson(); },
     "exam-start": startExam,
     practice: (d) => J.go("practice", { m: d.m }),
     "mod-test": (d) => startPractice(d.m, "learned", 20, true),

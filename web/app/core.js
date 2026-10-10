@@ -173,7 +173,7 @@
     for (const d of new Set([...Object.keys(a.days), ...Object.keys(b.days)])) {
       const x = a.days[d], y = b.days[d];
       if (!x || !y) { out.days[d] = x || y; continue; }
-      const m = { sec: Math.max(x.sec, y.sec), done: x.done || y.done };
+      const m = { sec: Math.max(x.sec, y.sec), done: x.done || y.done, double: !!(x.double || y.double) };
       for (const mo of ["v", "k", "g"]) { m[mo] = {}; for (const f of ["n", "r", "ok", "ko"]) m[mo][f] = Math.max(x[mo][f], y[mo][f]); }
       out.days[d] = m;
     }
@@ -407,6 +407,9 @@
   };
 
   /* ───────── Planning ───────── */
+  // Leçon double (« double journée ») : multiplie les nouveaux éléments et les tests du jour
+  J.todayMult = () => (J.S.dayMult && J.S.dayMult.date === J.today() ? J.S.dayMult.mult : 1);
+  J.setTodayMult = (mult) => { J.S.dayMult = { date: J.today(), mult }; J.save(); };
   J.estimateSec = (m, n, due, test) => {
     const T = J.S.timing[m];
     // nouveaux : fiche + vérification immédiate ; révisions : +15 % de rattrapage
@@ -445,11 +448,14 @@
       }
       out.capped = true;
     }
-    // déjà appris aujourd’hui
+    // déjà appris aujourd’hui (× 2 si leçon double)
+    const mult = J.todayMult();
+    out.mult = mult;
     for (const m of J.MOD_ORDER) {
       const p = out.mods[m];
       const done = todayDone ? todayDone[m].n : 0;
-      p.newLeft = Math.max(0, p.new - done);
+      p.test = Math.min(p.test * mult, p.learned);
+      p.newLeft = Math.max(0, p.new * mult - done);
       p.newLeft = Math.min(p.newLeft, p.remaining);
     }
     out.sec = J.MOD_ORDER.reduce((a, m) => a + J.estimateSec(m, out.mods[m].newLeft, out.mods[m].due, out.mods[m].test), 0);

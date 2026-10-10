@@ -484,3 +484,11 @@ table.plan td { font: 700 1rem var(--jp); }
 .lang button { border: 0; background: none; padding: 4px 9px; font: 700 .72rem var(--ui); letter-spacing: .08em; color: var(--muted); }
 .lang button.on { background: var(--ink); color: var(--sheet); }
 @media (max-width: 760px) { .lang { order: 2; } }
+
+/* Double journée */
+.stamp.gold { color: var(--kin); }
+.dose { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 12px 0 4px; }
+.dose-l { font: 700 .72rem var(--ui); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.dose .seg button .jp { color: var(--kin); font-weight: 700; }
+.dose .seg button.on .jp { color: inherit; }
+.badge-x2 { display: inline-block; font: 700 .8rem var(--ui); color: var(--sheet); background: var(--kin); padding: 1px 7px; transform: rotate(-4deg); vertical-align: middle; }
