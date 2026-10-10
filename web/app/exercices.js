@@ -91,6 +91,7 @@
   }
 
   J.makeEx = function (m, id, stage = "rev", kind) {
+    if (!J.byId[m][id]) throw new Error("Élément introuvable : " + id);
     let k = kind;
     if (!k || !usable(m, id, k)) {
       const list = KINDS[m][stage].filter((kk) => usable(m, id, kk));

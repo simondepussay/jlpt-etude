@@ -21,7 +21,15 @@
     document.documentElement.lang = J.lang();
     if (!J.S.onboarded && view.name !== "onboarding" && view.name !== "account") view = { name: "onboarding", p: {} };
     const inRun = view.name === "run";
-    app.innerHTML = (inRun ? "" : nav()) + `<main class="${inRun ? "run" : ""}">${VIEWS[view.name](view.p)}</main>`;
+    let body;
+    try { body = VIEWS[view.name](view.p); }
+    catch (e) {
+      console.error(e);
+      body = `<section class="card"><h2>${L("Oups, un problème d’affichage", "Oops, a display problem")}</h2>
+        <p class="muted small">${esc(e.message)}</p><p>${L("Ta progression est enregistrée.", "Your progress is saved.")}</p>
+        <div class="row"><button class="btn primary" data-act="end-run">${L("Retour à l’accueil", "Back to home")}</button></div></section>`;
+    }
+    app.innerHTML = (inRun ? "" : nav()) + `<main class="${inRun ? "run" : ""}">${body}</main>`;
     if (view.name === "run" && R && R.timed) {
       tick = setInterval(() => { const el = document.getElementById("timer"); if (el) el.textContent = fmtClock((Date.now() - R.started) / 1000); }, 1000);
     }
@@ -128,6 +136,7 @@
     const plan = J.plan(), proj = J.projection(), warn = J.paceWarning();
     const Ls = J.S.lesson && J.S.lesson.date === J.today() ? J.S.lesson : null;
     const done = Ls && Ls.pos >= Ls.queue.length;
+    if (done && !J.day().done) { J.day().done = true; if (Ls.mult === 2) J.day().double = true; J.save(); }
     const now = new Date();
     const himekuri = `<div class="himekuri" aria-label="${J.fmtDate(J.today())}">
         <div class="hm-rings"><i></i><i></i></div>
@@ -497,7 +506,7 @@
 
   VIEWS.run = () => {
     if (!R) return VIEWS.home();
-    while (R.pos < R.queue.length && R.queue[R.pos].skip) R.pos++;
+    while (R.pos < R.queue.length && (R.queue[R.pos].skip || !J.byId[R.queue[R.pos].m][R.queue[R.pos].id])) R.pos++;
     const it = R.queue[R.pos];
     const head = `<div class="run-head"><button class="link" data-act="quit">✕ ${L("Quitter", "Quit")}</button><span class="run-title jp">${esc(runTitle())}</span>
       ${R.timed ? `<span id="timer" class="timer">${fmtClock((Date.now() - R.started) / 1000)}</span>` : `<span class="muted">${Math.min(R.pos + 1, R.queue.length)} / ${R.queue.length}</span>`}</div>
@@ -525,7 +534,7 @@
         const mark = ex.answered ? (o === ex.answer ? HANAMARU : i === ex.chosen ? BATSU : "") : "";
         return `<button class="opt ${cls} ${ex.jpOpts ? "jp" : ""}" data-act="opt" data-i="${i}" ${ex.answered ? "disabled" : ""}><span class="bubble">${CIRCLED[i]}</span><span class="opt-t">${esc(o)}</span>${mark}</button>`;
       }).join("")}</div>`;
-      if (ex.answered) h += feedback(ex.correct, ex.correct ? "" : ex.answer) + ex.back + contBtn();
+      if (ex.answered) h += feedback(ex.correct, ex.correct ? "" : ex.answer) + ex.back + contBtn(ex);
     } else if (ex.mode === "self") {
       if (!ex.revealed) h += `<div class="row center"><button class="btn primary" data-act="reveal" autofocus>${L("Afficher la réponse", "Show answer")} <kbd>${L("espace", "space")}</kbd></button></div>`;
       else h += ex.back + `<p class="q-help center">${L("Comment t’en es-tu sorti ?", "How did you do?")}</p><div class="grades">
@@ -542,19 +551,23 @@
         h += `<div class="pieces">${ex.order.map((i) => `<button class="piece jp" data-act="piece" data-i="${i}" ${ex.picks.includes(i) ? "disabled" : ""}>${esc(ex.pieces[i])}</button>`).join("")}</div>
           <div class="row center"><button class="btn" data-act="order-clear">${L("Effacer", "Clear")}</button>${ex.picks.length === 4 ? `<button class="btn primary" data-act="order-check" autofocus>${L("Vérifier", "Check")} <kbd>↵</kbd></button>` : ""}</div>`;
       } else {
-        h += feedback(ex.correct, ex.correct ? "" : `★ = ${ex.pieces[ex.star]}`) + ex.back + contBtn();
+        h += feedback(ex.correct, ex.correct ? "" : `★ = ${ex.pieces[ex.star]}`) + ex.back + contBtn(ex);
       }
     }
     return h;
   }
   const feedback = (ok, ans) => `<div class="fb ${ok ? "ok" : "ko"}"><span class="fb-jp">${ok ? "正解！" : "ざんねん"}</span><span>${ok ? L("Correct", "Correct") : `${L("La bonne réponse", "The right answer")} : <b class="jp">${esc(ans)}</b>`}</span></div>`;
-  const contBtn = () => `<div class="row end"><button class="btn primary" data-act="cont" autofocus>${L("Continuer", "Continue")} <kbd>↵</kbd></button></div>`;
+  // Dernière question réussie : le bouton annonce la fin plutôt que « Continuer »
+  const isLast = (ex) => R && R.pos >= R.queue.length - 1 && (ex.correct || R.noFix || (R.fix[R.queue[R.pos].m + ":" + R.queue[R.pos].id] || 0) >= 3);
+  const contBtn = (ex) => isLast(ex)
+    ? `<div class="row end"><button class="btn primary big finish-btn" data-act="cont" autofocus>おつかれさま！ <span>${L("Terminer", "Finish")}</span></button></div>`
+    : `<div class="row end"><button class="btn primary" data-act="cont" autofocus>${L("Continuer", "Continue")} <kbd>↵</kbd></button></div>`;
 
   function finishView() {
     const lesson = R.type === "lesson";
     if (lesson) { J.day().done = true; if (R.mult === 2) J.day().double = true; J.save(true); }
     const tot = R.ok + R.ko;
-    const errs = [...new Map((R.errors || []).map((e) => [e.m + e.id, e])).values()];
+    const errs = [...new Map((R.errors || []).filter((e) => J.byId[e.m][e.id]).map((e) => [e.m + e.id, e])).values()];
     return `<section class="card finish"><h1>${lesson ? "お疲れさまでした！" : "終了！"}</h1>
       <p class="score">${tot ? Math.round((R.ok / tot) * 100) : 0} % <small>${R.ok} ✓ · ${R.ko} ✗</small></p>
       <p>${L("Durée", "Time")} : ${fmtClock((Date.now() - R.started) / 1000)}</p>
