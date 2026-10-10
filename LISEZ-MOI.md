@@ -26,14 +26,19 @@ Version web d’abord ; une application iPhone viendra ensuite, branchée sur la
 
 Raccourcis pendant une leçon : `1`–`4` pour répondre ou noter une carte, `Entrée` / `Espace` pour continuer.
 
+## Langue
+
+Le japonais est toujours affiché. Tout le reste (interface, explications, traductions, sens des mots et des kanji) est **entièrement en français ou entièrement en anglais**, au choix : sélecteur FR / EN dans l’en-tête, au premier lancement et dans *Réglages*.
+
 ## Contenu N1
 
-- **Vocabulaire** : 3 476 mots (liste Coto Academy, sens en anglais)
-- **Kanji** : 1 232 kanji (lectures on/kun, sens en anglais), reliés aux mots qui les contiennent
-- **Grammaire** : 90 points avec explication en français, exemples traduits, pièges, QCM et phrases à ordonner
+- **Vocabulaire** : 3 315 mots (liste Coto Academy, sans les 161 mots déjà présents dans les listes N2–N5), sens en français et en anglais
+- **Kanji** : 1 232 kanji (lectures on/kun), sens en français et en anglais, reliés aux mots qui les contiennent
+- **Grammaire** : 90 points, en français et en anglais : explication, exemples traduits, pièges, QCM et phrases à ordonner (toutes les phrases sont traduites)
   - 1–50 : liste de la vidéo (pas de n°30 ; le n°34 « 〜とこと » a été interprété comme **〜ところを**)
   - 51–91 : compléments de la liste Coto
-- `Fiches-grammaire-N1.html` : fiches imprimables
+- Bouton « Pas du N1 » : écarte un mot ou un kanji mal classé (filtre « Retirés » pour le remettre)
+- `Fiches-grammaire-N1.html` : fiches imprimables (`?lang=en` pour l’anglais)
 
 ## Architecture
 
@@ -44,10 +49,11 @@ jlpt-etude/
 │   ├── Fiches-grammaire-N1.html
 │   ├── staticwebapp.config.json   (en-têtes de sécurité, runtime de l’API)
 │   ├── app/   core.js (planning, répétition espacée, synchro) · exercices.js · ui.js · compte.js · config.js · style.css
-│   └── data/  n1-vocab.js · n1-kanji.js · n1-grammaire.js
+│   └── data/  n1-vocab.js · n1-kanji.js · n1-grammaire.js (+ -en, -trad, -trad-en) · n1-vocab-fr.js · n1-kanji-fr.js
 ├── api/                      ← Azure Functions (Node 20), déployées avec le site
 │   └── src/  functions/api.js · lib/auth.js · lib/store.js
 ├── outils/import_coto.py     ← regénère web/data depuis l’Excel Coto
+├── outils/fusion_fr.js       ← fusionne un lot de sens français (index<TAB>sens) dans n1-vocab-fr.js
 └── .github/workflows/deploy.yml   ← tests + déploiement à chaque push sur main
 ```
 
