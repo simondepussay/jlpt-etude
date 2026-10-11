@@ -34,7 +34,10 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          ref: ${{ inputs.ref || github.sha }}
+          fetch-depth: 0
+      - name: Version à déployer (retour arrière éventuel)
+        if: inputs.ref
+        run: git checkout --detach "${{ inputs.ref }}"
       - uses: actions/setup-node@v5
         with:
           node-version: 20
@@ -55,7 +58,10 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          ref: ${{ inputs.ref || github.sha }}
+          fetch-depth: 0
+      - name: Version à déployer (retour arrière éventuel)
+        if: inputs.ref
+        run: git checkout --detach "${{ inputs.ref }}"
       - name: Tampon de version (lu par /api/health)
         id: version
         run: |
