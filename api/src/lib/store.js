@@ -59,4 +59,11 @@ async function deletePrefix(prefix) {
   return n;
 }
 
-module.exports = { readJson, writeJson, deletePrefix };
+// Vérifie que le stockage répond (utilisé par /api/health)
+async function ping() {
+  const c = await getContainer();
+  await c.getProperties();
+  return true;
+}
+
+module.exports = { readJson, writeJson, deletePrefix, ping };

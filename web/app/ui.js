@@ -608,6 +608,13 @@
     window.scrollTo(0, 0);
   }
 
+  // Accès pour les tests automatiques (construction de leçon, rattrapage)
+  J._test = {
+    buildLesson, extendLesson, result,
+    get R() { return R; }, set R(v) { R = v; },
+    set EX(v) { EX = v; }
+  };
+
   /* ───────── Actions ───────── */
   const A = {
     nav: (d) => { const v = d.v; if (v.startsWith("mod-")) J.go("mod", { m: v.slice(4) }); else J.go(v); },

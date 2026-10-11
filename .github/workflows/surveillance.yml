@@ -1,0 +1,23 @@
+name: Surveillance (site et API)
+
+# Toutes les 30 minutes : le site répond, l’API et le stockage sont en bonne santé.
+# En cas d’échec, GitHub envoie un e-mail (notification d’échec des workflows planifiés).
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Page d’accueil
+        run: curl -fsS --retry 3 --retry-delay 10 -o /dev/null -w "accueil %{http_code} en %{time_total}s\n" https://purple-flower-00ac22900.5.azurestaticapps.net/
+      - name: API et stockage
+        run: |
+          BODY=$(curl -fsS --retry 3 --retry-delay 10 https://purple-flower-00ac22900.5.azurestaticapps.net/api/health)
+          echo "$BODY"
+          echo "$BODY" | grep -q '"status":"ok"'

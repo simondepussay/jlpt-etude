@@ -1,36 +1,100 @@
 name: Déploiement Azure Static Web Apps
 
+# main            → tests, déploiement en production, vérification de la version en ligne
+# pull request    → tests + environnement de prévisualisation (URL temporaire), supprimé à la fermeture
+# lancement manuel → retour arrière : redéploie n’importe quel commit (champ « ref ») sans toucher à main
 on:
   push:
     branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+    branches: [main]
   workflow_dispatch:
+    inputs:
+      ref:
+        description: "Commit, tag ou branche à redéployer (retour arrière)"
+        required: true
+        default: main
 
 permissions:
   contents: read
+  pull-requests: write
+
+concurrency:
+  group: deploy-${{ github.event.pull_request.number || 'prod' }}
+  cancel-in-progress: false
+
+env:
+  SITE: https://purple-flower-00ac22900.5.azurestaticapps.net
 
 jobs:
   test:
+    if: github.event.action != 'closed'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+      - uses: actions/setup-node@v5
         with:
           node-version: 20
+      - name: Règles métier et données
+        run: npm test
+        working-directory: web
       - run: npm ci
         working-directory: api
-      - run: npm test
+      - name: API
+        run: npm test
         working-directory: api
 
   deploy:
     needs: test
     runs-on: ubuntu-latest
+    outputs:
+      commit: ${{ steps.version.outputs.commit }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+      - name: Tampon de version (lu par /api/health)
+        id: version
+        run: |
+          COMMIT=$(git rev-parse --short HEAD)
+          echo "{\"commit\":\"$COMMIT\",\"date\":\"$(date -u +%FT%TZ)\"}" > api/version.json
+          echo "commit=$COMMIT" >> "$GITHUB_OUTPUT"
       - uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: upload
           app_location: web
           api_location: api
           output_location: ""
           skip_app_build: true
+
+  verify:
+    # Vérifie que la production sert bien la version qui vient d’être déployée
+    if: github.event_name != 'pull_request'
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Santé et version en ligne
+        run: |
+          for i in $(seq 1 20); do
+            BODY=$(curl -fsS "$SITE/api/health" || true)
+            echo "$BODY"
+            if echo "$BODY" | grep -q "\"commit\":\"${{ needs.deploy.outputs.commit }}\"" && echo "$BODY" | grep -q '"status":"ok"'; then
+              curl -fsS -o /dev/null "$SITE/" && echo "Version ${{ needs.deploy.outputs.commit }} en ligne et en bonne santé." && exit 0
+            fi
+            sleep 15
+          done
+          echo "::error::La version déployée n’est pas en ligne ou l’API ne répond pas"; exit 1
+
+  close_preview:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          action: close

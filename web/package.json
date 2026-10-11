@@ -1,0 +1,6 @@
+{
+  "name": "jlpt-etude-web",
+  "private": true,
+  "description": "Tests des règles métier et des données (aucune dépendance)",
+  "scripts": { "test": "node --test test/*.test.js" }
+}

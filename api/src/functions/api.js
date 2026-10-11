@@ -2,6 +2,7 @@
 //   POST   /api/auth/login        { provider, idToken, nonce } → { token, user }
 //   GET    /api/me                → profil
 //   DELETE /api/me                → supprime le compte et toutes les données
+//   GET    /api/health            → état du service (surveillance) : 200 ok / 503 dégradé
 //   GET    /api/progress/{level}  → { data, etag } ou 204 si rien
 //   PUT    /api/progress/{level}  corps = progression ; en-tête If-Match (ETag) ou x-create: 1
 //                                 → { etag } ou 412 { data, etag } en cas de conflit
@@ -10,6 +11,9 @@ const { verifyIdToken, userIdFor, issueSession, requireSession, AuthError } = re
 const store = require("../lib/store");
 
 const MAX_BODY = 4 * 1024 * 1024;
+// Version déployée (écrite par GitHub Actions : commit + date), pour vérifier un déploiement ou un retour arrière
+let VERSION = { commit: "dev", date: null };
+try { VERSION = require("../../version.json"); } catch { /* exécution locale */ }
 const LEVELS = /^N[1-5]$/;
 
 const json = (status, body) => ({ status, jsonBody: body, headers: { "Cache-Control": "no-store" } });
@@ -33,6 +37,19 @@ async function readBody(request) {
   if (text.length > MAX_BODY) throw Object.assign(new Error("Données trop volumineuses"), { status: 413 });
   try { return JSON.parse(text); } catch { throw Object.assign(new Error("JSON invalide"), { status: 400 }); }
 }
+
+app.http("health", {
+  route: "health",
+  methods: ["GET"],
+  authLevel: "anonymous",
+  handler: async (request, context) => {
+    const started = Date.now();
+    let storage = "ok";
+    try { await store.ping(); } catch (e) { storage = "erreur"; context.error("health: stockage", e.message); }
+    const ok = storage === "ok";
+    return json(ok ? 200 : 503, { status: ok ? "ok" : "dégradé", storage, version: VERSION, ms: Date.now() - started, time: new Date().toISOString() });
+  }
+});
 
 app.http("login", {
   route: "auth/login",
