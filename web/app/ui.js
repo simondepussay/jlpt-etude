@@ -29,7 +29,7 @@
         <p class="muted small">${esc(e.message)}</p><p>${L("Ta progression est enregistrée.", "Your progress is saved.")}</p>
         <div class="row"><button class="btn primary" data-act="end-run">${L("Retour à l’accueil", "Back to home")}</button></div></section>`;
     }
-    app.innerHTML = (inRun ? "" : nav()) + `<main class="${inRun ? "run" : ""}">${body}</main>`;
+    app.innerHTML = (inRun ? "" : nav() + moveBanner()) + `<main class="${inRun ? "run" : ""}">${body}</main>`;
     if (view.name === "run" && R && R.timed) {
       tick = setInterval(() => { const el = document.getElementById("timer"); if (el) el.textContent = fmtClock((Date.now() - R.started) / 1000); }, 1000);
     }
@@ -38,6 +38,23 @@
     if (f) f.focus();
   }
   J.render = render;
+
+  /* ───────── Déménagement vers jlpt.simondepussay.com ───────── */
+  const NEW_ORIGIN = "https://jlpt.simondepussay.com";
+  // ancienne adresse de production uniquement (pas les prévisualisations « …-1.eastasia… » ni le local)
+  const OLD_HOST = location.hostname === "purple-flower-00ac22900.5.azurestaticapps.net";
+  const moveBanner = () => {
+    if (!OLD_HOST) return "";
+    const u = J.user();
+    const msg = u
+      ? L("JLPT Étude a une nouvelle adresse. Ta progression est enregistrée sur ton compte : reconnecte-toi une fois là-bas et tu la retrouveras.",
+          "JLPT Étude has a new address. Your progress is saved to your account: sign in once there and it will be back.")
+      : L("JLPT Étude a une nouvelle adresse. Ta progression est enregistrée dans ce navigateur, sur cette adresse uniquement : pour la garder, connecte-toi ici d’abord (elle sera envoyée sur ton compte) ou exporte-la puis importe-la là-bas.",
+          "JLPT Étude has a new address. Your progress is stored in this browser, for this address only: to keep it, sign in here first (it will be sent to your account) or export it and import it there.");
+    return `<div class="move"><b>${L("Nouvelle adresse", "New address")} : <a href="${NEW_ORIGIN}">jlpt.simondepussay.com</a></b><p>${msg}</p>
+      <div class="row">${!u ? `<button class="btn" data-act="nav" data-v="account">${L("Me connecter ici d’abord", "Sign in here first")}</button><button class="btn" data-act="export">${L("Exporter ma progression", "Export my progress")}</button>` : ""}
+      <a class="btn primary" href="${NEW_ORIGIN}">${L("Aller sur la nouvelle adresse", "Go to the new address")} →</a></div></div>`;
+  };
 
   const langSwitch = () => `<div class="lang" role="group" aria-label="Langue / Language">
     <button class="${J.lang() === "fr" ? "on" : ""}" data-act="set-lang" data-l="fr">FR</button><button class="${J.lang() === "en" ? "on" : ""}" data-act="set-lang" data-l="en">EN</button></div>`;
@@ -772,6 +789,7 @@
   );
   (async () => {
     await J.load();
+    if (OLD_HOST && !J.user() && !J.S.onboarded && !location.hash) { location.replace(NEW_ORIGIN + "/"); return; }
     if (J.S.lesson && J.S.lesson.date !== J.today()) J.S.lesson = null;
     render();
     await J.handleRedirect();

@@ -492,3 +492,10 @@ table.plan td { font: 700 1rem var(--jp); }
 .dose .seg button .jp { color: var(--kin); font-weight: 700; }
 .dose .seg button.on .jp { color: inherit; }
 .badge-x2 { display: inline-block; font: 700 .8rem var(--ui); color: var(--sheet); background: var(--kin); padding: 1px 7px; transform: rotate(-4deg); vertical-align: middle; }
+
+/* Bandeau de déménagement (ancienne adresse) */
+.move { max-width: 1040px; margin: 18px auto 0; padding: 14px 18px; border: 1.5px solid var(--shu); background: var(--sheet); box-shadow: 4px 4px 0 var(--shu); }
+.move b a { color: var(--shu); }
+.move p { margin: 6px 0 0; font-size: .9rem; }
+.move .row { margin-top: 10px; }
+@media (max-width: 760px) { .move { margin: 12px 16px 0; } }

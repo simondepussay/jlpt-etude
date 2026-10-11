@@ -14,10 +14,17 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - name: Page d’accueil
-        run: curl -fsS --retry 3 --retry-delay 10 -o /dev/null -w "accueil %{http_code} en %{time_total}s\n" https://purple-flower-00ac22900.5.azurestaticapps.net/
+      - name: Page d’accueil (jlpt.simondepussay.com)
+        run: curl -fsS --retry 3 --retry-delay 10 -o /dev/null -w "accueil %{http_code} en %{time_total}s\n" https://jlpt.simondepussay.com/
+      - name: Certificat HTTPS valable encore au moins 14 jours
+        run: |
+          END=$(echo | openssl s_client -connect jlpt.simondepussay.com:443 -servername jlpt.simondepussay.com 2>/dev/null | openssl x509 -noout -enddate | cut -d= -f2)
+          echo "expire le $END"
+          [ $(( $(date -d "$END" +%s) - $(date +%s) )) -gt $((14*86400)) ]
+      - name: Ancienne adresse (bandeau de déménagement)
+        run: curl -fsS --retry 3 --retry-delay 10 -o /dev/null https://purple-flower-00ac22900.5.azurestaticapps.net/
       - name: API et stockage
         run: |
-          BODY=$(curl -fsS --retry 3 --retry-delay 10 https://purple-flower-00ac22900.5.azurestaticapps.net/api/health)
+          BODY=$(curl -fsS --retry 3 --retry-delay 10 https://jlpt.simondepussay.com/api/health)
           echo "$BODY"
           echo "$BODY" | grep -q '"status":"ok"'

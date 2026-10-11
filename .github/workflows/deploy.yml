@@ -25,7 +25,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  SITE: https://purple-flower-00ac22900.5.azurestaticapps.net
+  SITE: https://jlpt.simondepussay.com
 
 jobs:
   test:

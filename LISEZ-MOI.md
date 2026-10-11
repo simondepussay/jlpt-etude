@@ -3,7 +3,7 @@
 Site d’étude quotidienne pour le JLPT : **漢字 Kanji · 語彙 Vocabulaire · 文法 Grammaire**.
 Version web d’abord ; une application iPhone viendra ensuite, branchée sur la même API et les mêmes comptes.
 
-- **Site** : https://purple-flower-00ac22900.5.azurestaticapps.net
+- **Site** : https://jlpt.simondepussay.com (ancienne adresse https://purple-flower-00ac22900.5.azurestaticapps.net : bandeau de déménagement)
 - **Comptes** : connexion avec Google, Apple ou Microsoft. Aucun mot de passe n’est stocké. On peut aussi utiliser le site sans compte : la progression reste alors dans le navigateur, puis elle est ajoutée au compte à la première connexion.
 
 ## Comment ça marche
@@ -80,17 +80,17 @@ Pour chaque fournisseur, il faut un identifiant client, à renseigner à **deux 
 **Google**
 1. https://console.cloud.google.com → créer un projet « JLPT Étude » → *API et services* → *Écran de consentement OAuth* (externe)
 2. *Identifiants* → *Créer des identifiants* → *ID client OAuth* → type **Application Web**
-3. *Origines JavaScript autorisées* : `https://purple-flower-00ac22900.5.azurestaticapps.net` (+ `http://localhost:8765` pour les tests)
+3. *Origines JavaScript autorisées* : `https://jlpt.simondepussay.com` et `https://purple-flower-00ac22900.5.azurestaticapps.net` (ancienne adresse) (+ `http://localhost:8765` pour les tests)
 4. Copier l’ID client (`xxxx.apps.googleusercontent.com`)
 
 **Apple** (compte Apple Developer)
 1. *Identifiers* → **Services IDs** → nouveau, par ex. `com.simondepussay.jlpt.web`, activer *Sign in with Apple*
-2. *Configure* : domaine `purple-flower-00ac22900.5.azurestaticapps.net`, URL de retour `https://purple-flower-00ac22900.5.azurestaticapps.net/`
+2. *Configure* : domaine `jlpt.simondepussay.com`, URL de retour `https://jlpt.simondepussay.com/`
 3. L’identifiant à utiliser est le Services ID. Pour l’appli iPhone plus tard, ajouter aussi son bundle ID dans `APPLE_CLIENT_IDS` (séparés par des virgules).
 
 **Microsoft**
 1. Portail Azure → *Inscriptions d’applications* → nouvelle → « Comptes dans un annuaire organisationnel et comptes Microsoft personnels »
-2. Plateforme **Application monopage (SPA)** ou Web, URI de redirection `https://purple-flower-00ac22900.5.azurestaticapps.net/`, cocher **Jetons d’ID**
+2. Plateforme **Application monopage (SPA)** ou Web, URI de redirection `https://jlpt.simondepussay.com/`, cocher **Jetons d’ID**
 3. Copier l’ID d’application (client)
 
 Puis :
