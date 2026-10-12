@@ -719,7 +719,9 @@
       if (!confirm(L("Effacer toute ta progression ? (Pense à exporter une copie avant.)", "Erase all your progress? (Export a copy first.)"))) return;
       if (!confirm(L("Vraiment tout effacer ? Cette action est définitive.", "Really erase everything? This cannot be undone."))) return;
       const lang = J.S.settings.lang;
-      J.S = J.defaultState(); J.S.settings.lang = lang; J.refreshItems(); J.save(true); R = null; J.go("onboarding");
+      J.S = J.defaultState(); J.S.settings.lang = lang; J.refreshItems();
+      // des réglages remis à neuf doivent l’emporter sur ceux du nuage
+      J.S.settingsAt = new Date().toISOString(); J.save(true); R = null; J.go("onboarding");
     }
   };
 
