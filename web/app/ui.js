@@ -64,7 +64,7 @@
     const cur = view.name === "mod" ? "mod-" + view.p.m : view.name === "item" ? "mod-" + view.p.m : view.name;
     const u = J.user(), bad = J.store.status === "error" || J.store.status === "offline" || J.store.expired;
     const st = u
-      ? `<button class="save ${bad ? "err" : "ok"} ${cur === "account" ? "on" : ""}" data-act="nav" data-v="account" title="${esc(J.store.error || L("Progression synchronisée sur ton compte", "Progress synced to your account"))}">${bad ? "⚠︎" : "●"} ${esc(u.name || u.email || L("Mon compte", "My account"))}</button>`
+      ? `<button class="save ${bad ? "err" : "ok"} ${cur === "account" ? "on" : ""}" data-act="nav" data-v="account" title="${esc(J.store.error || L("Progression synchronisée sur ton compte", "Progress synced to your account") + (J.store.lastSave ? " · " + J.store.lastSave.toLocaleTimeString(J.locale()) : ""))}">${bad ? "⚠︎" : '<i class="save-pt" aria-hidden="true"></i>'} ${esc(u.name || u.email || L("Mon compte", "My account"))}</button>`
       : `<button class="save warn ${cur === "account" ? "on" : ""}" data-act="nav" data-v="account" title="${L("Sans compte, la progression reste dans ce navigateur", "Without an account, progress stays in this browser")}">${L("Se connecter", "Sign in")}</button>`;
     return `<header class="top"><div class="brand"><span class="hanko" aria-hidden="true">日本<br>語</span><span class="brand-t">JLPT Étude<b>${J.LEVEL}</b></span></div>
       <nav>${tabs.map(([v, jp, tr]) => `<button class="tab ${cur === v ? "on" : ""}" data-act="nav" data-v="${v}"><span class="jp">${jp}</span><span class="tfr">${tr}</span></button>`).join("")}</nav>${langSwitch()}${st}</header>`;
@@ -147,6 +147,17 @@
   const rot = (seed) => { let h = 0; for (const c of String(seed)) h = (h * 31 + c.charCodeAt(0)) | 0; return ((h % 17) - 8); };
   /* Retour visuel d’une action faite : un 判子 s’imprime près du bouton,
      légèrement de travers et jamais au même endroit — comme un vrai cachet. */
+  /* L’envoi au nuage est silencieux : un battement du point le rend visible,
+     sans rien interrompre. L’événement est émis par J.save après chaque envoi. */
+  document.addEventListener("j:saved", () => {
+    if (J.store.status !== "ok") return;
+    const pt = document.querySelector("header .save .save-pt");
+    if (!pt) return;
+    pt.classList.remove("bat");
+    void pt.offsetWidth;
+    pt.classList.add("bat");
+  });
+
   function tampon(el, txt) {
     if (!el || !el.getBoundingClientRect) return;
     const r = el.getBoundingClientRect();

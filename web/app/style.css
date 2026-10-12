@@ -525,3 +525,17 @@ table.plan td { font: 700 1rem var(--jp); }
     .tampon { animation: tampon-fondu 1.4s linear forwards; }
     @keyframes tampon-fondu { 0%,70% { opacity: 1; } 100% { opacity: 0; } }
 }
+
+/* Point d’état de la synchronisation : il bat quand l’envoi a abouti. */
+.save-pt {
+    width: 7px; height: 7px; flex: none; border-radius: 50%;
+    background: var(--matcha); display: inline-block;
+}
+.save-pt.bat { animation: battement .9s ease-out; }
+@keyframes battement {
+    0%   { transform: scale(1);   box-shadow: 0 0 0 0 color-mix(in srgb, var(--matcha) 70%, transparent); }
+    35%  { transform: scale(1.5); box-shadow: 0 0 0 5px color-mix(in srgb, var(--matcha) 0%, transparent); }
+    100% { transform: scale(1);   box-shadow: 0 0 0 0 transparent; }
+}
+@media (prefers-reduced-motion: reduce) { .save-pt.bat { animation: none; } }
+.save { display: inline-flex; align-items: center; gap: 7px; }
