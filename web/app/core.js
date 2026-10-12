@@ -97,6 +97,7 @@
     notes: {},
     excluded: {},
     lesson: null,
+    settingsAt: null,
     paceAck: null
   });
   J.S = J.defaultState();
@@ -158,9 +159,19 @@
     if (!a || !a.version) return b;
     if (!b || !b.version) return a;
     a = migrate(a); b = migrate(b);
-    const newer = (a.updatedAt || "") >= (b.updatedAt || "") ? a : b;
+    // a vient du nuage, b de cet appareil : à égalité, c’est l’appareil qui gagne
+    const newer = (a.updatedAt || "") > (b.updatedAt || "") ? a : b;
     const out = migrate(JSON.parse(JSON.stringify(newer)));
     out.created = a.created < b.created ? a.created : b.created;
+    // Les réglages suivent leur propre date : un appareil fraîchement ouvert
+    // ne doit pas écraser des choix faits ailleurs. Voir J.saveSettings.
+    const reglagesDe = (a.settingsAt || "") > (b.settingsAt || "") ? a : b;
+    out.settings = JSON.parse(JSON.stringify(reglagesDe.settings));
+    out.settingsAt = reglagesDe.settingsAt || null;
+    // la leçon du jour : on garde celle qui est allée le plus loin
+    const lA = a.lesson, lB = b.lesson;
+    if (lA && lB && lA.date === lB.date) out.lesson = (lA.pos || 0) >= (lB.pos || 0) ? lA : lB;
+    else out.lesson = (lA && lB) ? (lA.date > lB.date ? lA : lB) : (lA || lB);
     out.onboarded = a.onboarded || b.onboarded;
     out.items = {};
     for (const k of new Set([...Object.keys(a.items), ...Object.keys(b.items)])) {
@@ -210,6 +221,9 @@
     if (s && J.store.status === "ok") J.save(true);
   };
 
+  /* Un changement de réglage porte sa propre date : voir J.merge. */
+  J.saveSettings = () => { J.S.settingsAt = new Date().toISOString(); J.save(); };
+
   let saveTimer = null, saving = false, again = false;
   J.save = function (now) {
     J.S.updatedAt = new Date().toISOString();
@@ -236,6 +250,8 @@
     if (now) go(); else saveTimer = setTimeout(go, 1500);
   };
   document.addEventListener("visibilitychange", () => { if (document.hidden) J.save(true); });
+  // un rafraîchissement ne déclenche pas visibilitychange de façon fiable
+  window.addEventListener("pagehide", () => J.save(true));
   window.addEventListener("online", () => J.save(true));
 
   /* Connexion : échange le jeton du fournisseur contre une session JLPT Étude */
