@@ -384,6 +384,10 @@
         <div class="field"><label>${L("Questions de test par leçon", "Test questions per lesson")}</label><div class="row">${MOD_ORDER.map((m) => `<label class="num">${J.modName(m)} <input type="number" min="0" max="30" data-set="test-${m}" value="${s.tests[m]}"></label>`).join("")}</div></div>
         <div class="field"><label>${L("Vitesse de la voix japonaise", "Japanese voice speed")}</label><input type="range" min="0.6" max="1.2" step="0.05" data-set="rate" value="${s.rate}"></div>
         <div class="preview"><h3>${L("Effet sur ton planning", "Effect on your plan")}</h3>${planTable(J.plan(), true)}<p class="muted">${planNote(J.plan())}</p></div>
+        <div class="field"><label>${L("Leçon du jour", "Today’s lesson")}</label>
+          <button class="btn" data-act="rebuild-lesson">${L("Reconstruire la leçon du jour", "Rebuild today’s lesson")}</button>
+          <p class="muted small">${L("La leçon du jour est fabriquée une fois, au premier démarrage. Si tu changes ta date d’examen après coup, elle ne bouge pas avant demain : ce bouton la refait tout de suite. Ce que tu as déjà appris est conservé.",
+            "Today’s lesson is built once, the first time you start it. If you change your exam date afterwards, it stays as it is until tomorrow: this button rebuilds it now. What you have already learnt is kept.")}</p></div>
       </section>
       <section class="card"><h3>${L("Sauvegarde", "Backup")}</h3>${st}
         <div class="row"><button class="btn" data-act="export">${L("Exporter une copie (.json)", "Export a copy (.json)")}</button>
@@ -643,6 +647,18 @@
     "finish-onboard": () => { J.S.onboarded = true; J.save(true); J.go("home"); },
     "pace-adapt": (d) => { J.S.settings.daysPerWeek = +d.n; J.S.paceAck = J.today(); J.saveSettings(); render(); },
     "pace-keep": () => { J.S.paceAck = J.today(); J.save(); render(); },
+    /* La leçon du jour est figée jusqu’au lendemain : on la refait à la demande.
+       Les acquis vivent dans J.S.items, pas dans la file : rien n’est perdu. */
+    "rebuild-lesson": () => {
+      const L0 = J.S.lesson;
+      if (L0 && L0.date === J.today() && (L0.pos || 0) > 0
+          && !confirm(L("La leçon du jour est déjà commencée. La refaire remet le compteur à zéro — ce que tu as appris reste acquis. Continuer ?",
+                        "Today’s lesson is already under way. Rebuilding resets its counter — what you have learnt is kept. Carry on?"))) return;
+      J.S.lesson = null;
+      J.S.dayMult = null;
+      J.save();
+      render();
+    },
     "lesson-start": startLesson,
     "set-mult": (d) => { J.setTodayMult(+d.n); render(); },
     "lesson-double": () => { extendLesson(); startLesson(); },
