@@ -145,6 +145,22 @@
   const BATSU = `<svg class="mark batsu" viewBox="0 0 100 100" aria-hidden="true"><path pathLength="1" d="M18 86C40 60 62 36 86 12"/></svg>`;
   const CIRCLED = ["①", "②", "③", "④", "⑤", "⑥"];
   const rot = (seed) => { let h = 0; for (const c of String(seed)) h = (h * 31 + c.charCodeAt(0)) | 0; return ((h % 17) - 8); };
+  /* Retour visuel d’une action faite : un 判子 s’imprime près du bouton,
+     légèrement de travers et jamais au même endroit — comme un vrai cachet. */
+  function tampon(el, txt) {
+    if (!el || !el.getBoundingClientRect) return;
+    const r = el.getBoundingClientRect();
+    const s = document.createElement("span");
+    s.className = "tampon";
+    s.textContent = txt;
+    s.style.setProperty("--r", (Math.random() * 26 - 13).toFixed(1) + "deg");
+    s.style.left = Math.round(r.right - 10) + "px";
+    s.style.top = Math.round(r.top + r.height / 2 - 22 + (Math.random() * 10 - 5)) + "px";
+    document.body.appendChild(s);
+    s.addEventListener("animationend", () => s.remove());
+    setTimeout(() => s.remove(), 2500);
+  }
+
   const stamp = (txt, seed, cls = "") => `<span class="stamp ${cls}" style="--r:${rot(seed)}deg">${txt}</span>`;
   const WEEKDAY = ["日", "月", "火", "水", "木", "金", "土"];
 
@@ -658,6 +674,7 @@
       J.S.dayMult = null;
       J.save();
       render();
+      tampon(document.querySelector('[data-act="rebuild-lesson"]'), "済");
     },
     "lesson-start": startLesson,
     "set-mult": (d) => { J.setTodayMult(+d.n); render(); },
