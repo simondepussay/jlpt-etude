@@ -34,9 +34,10 @@ Le japonais est toujours affiché. Tout le reste (interface, explications, tradu
 
 - **Vocabulaire** : 3 315 mots (liste Coto Academy, sans les 161 mots déjà présents dans les listes N2–N5), sens en français et en anglais
 - **Kanji** : 1 232 kanji (lectures on/kun), sens en français et en anglais, reliés aux mots qui les contiennent
-- **Grammaire** : 90 points, en français et en anglais : explication, exemples traduits, pièges, QCM et phrases à ordonner (toutes les phrases sont traduites)
+- **Grammaire** : 190 points, en français et en anglais : explication, exemples traduits, pièges, QCM et phrases à ordonner (toutes les phrases sont traduites)
   - 1–50 : liste de la vidéo (pas de n°30 ; le n°34 « 〜とこと » a été interprété comme **〜ところを**)
   - 51–91 : compléments de la liste Coto
+  - 92–191 : compléments triés depuis GrammarOtter (253 points → 100 gardés : sans doublons, sans simple vocabulaire ni points N2/N3). Sources dans `outils/ajouts-grammaire/` (`node outils/ajouts-grammaire/fusionner.js` vérifie puis fusionne)
 - Bouton « Pas du N1 » : écarte un mot ou un kanji mal classé (filtre « Retirés » pour le remettre)
 - `Fiches-grammaire-N1.html` : fiches imprimables (`?lang=en` pour l’anglais)
 
