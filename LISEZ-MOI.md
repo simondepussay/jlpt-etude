@@ -33,7 +33,7 @@ Le japonais est toujours affiché. Tout le reste (interface, explications, tradu
 ## Contenu N1
 
 - **Vocabulaire** : 3 315 mots (liste Coto Academy, sans les 161 mots déjà présents dans les listes N2–N5), sens en français et en anglais
-- **Kanji** : 1 232 kanji (lectures on/kun), sens en français et en anglais, reliés aux mots qui les contiennent
+- **Kanji** : 1 232 kanji (lectures on/kun), sens en français et en anglais, reliés aux mots qui les contiennent. Comme au JLPT, on ne demande jamais la lecture d’un kanji seul, mais celle d’un mot qui le contient (mots N1, complétés par des mots N2–N5 : `outils/mots_kanji.py`)
 - **Grammaire** : 190 points, en français et en anglais : explication, exemples traduits, pièges, QCM et phrases à ordonner (toutes les phrases sont traduites)
   - 1–50 : liste de la vidéo (pas de n°30 ; le n°34 « 〜とこと » a été interprété comme **〜ところを**)
   - 51–91 : compléments de la liste Coto
@@ -54,6 +54,7 @@ jlpt-etude/
 ├── api/                      ← Azure Functions (Node 20), déployées avec le site
 │   └── src/  functions/api.js · lib/auth.js · lib/store.js
 ├── outils/import_coto.py     ← regénère web/data depuis l’Excel Coto
+├── outils/mots_kanji.py      ← mots N2–N5 d’exemple pour lire les kanji N1 en contexte
 ├── outils/fusion_fr.js       ← fusionne un lot de sens français (index<TAB>sens) dans n1-vocab-fr.js
 └── .github/workflows/deploy.yml   ← tests + déploiement à chaque push sur main
 ```

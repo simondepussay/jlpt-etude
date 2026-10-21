@@ -45,6 +45,11 @@
       if (J.byId.k[ch]) (J.kanjiWords[ch] = J.kanjiWords[ch] || []).push(w.id);
     }
   }
+  // Mots pour lire un kanji en contexte (le JLPT ne demande jamais la lecture d’un kanji seul) :
+  // d’abord les mots N1 ({w, r, id}), puis des mots N2–N5 sans fiche ({w, r}).
+  const KMOTS = window.DATA["N1-kanji-mots"] || {};
+  J.kanjiReadWords = (ch) => (J.kanjiWords[ch] || []).map((id) => J.byId.v[id]).filter((v) => v && v.w !== v.r)
+    .concat((KMOTS[ch] || []).map(([w, r]) => ({ w, r })));
 
   /* ───────── Dates ───────── */
   const pad = (n) => String(n).padStart(2, "0");

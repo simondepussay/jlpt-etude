@@ -7,7 +7,7 @@ const vm = require("node:vm");
 const WEB = path.join(__dirname, "..");
 const SCRIPTS = [
   "data/n1-vocab.js", "data/n1-kanji.js", "data/n1-grammaire.js", "data/n1-grammaire-trad.js",
-  "data/n1-grammaire-en.js", "data/n1-grammaire-trad-en.js", "data/n1-vocab-fr.js", "data/n1-kanji-fr.js",
+  "data/n1-grammaire-en.js", "data/n1-grammaire-trad-en.js", "data/n1-vocab-fr.js", "data/n1-kanji-fr.js", "data/n1-kanji-mots.js",
   "app/core.js", "app/exercices.js"
 ];
 const CODE = SCRIPTS.map((f) => [f, fs.readFileSync(path.join(WEB, f), "utf8")]);

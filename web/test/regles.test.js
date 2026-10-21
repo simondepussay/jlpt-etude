@@ -378,3 +378,23 @@ test("R38 · la langue choisie s’applique à tout sauf au japonais", () => {
   assert.notEqual(J.mean("v", v), v.m);
   assert.equal(J.gs(g, "s"), g.s);
 });
+
+test("R39 · kanji : jamais la lecture d’un kanji seul, toujours la lecture d’un mot qui le contient", () => {
+  const J = load();
+  for (const k of J.items.k) for (const stage of ["rev", "check", "test"]) {
+    const ex = J.makeEx("k", k.id, stage);
+    assert.notEqual(ex.kind, "k-read", k.k);
+    if (ex.kind === "k-word") {
+      assert.ok(ex.prompt.includes(`<u>${k.k}</u>`), `${k.k} : le kanji est souligné dans un mot`);
+      assert.equal(ex.options.length, 4, k.k);
+      assert.ok(ex.options.includes(ex.answer), k.k);
+    }
+  }
+});
+
+test("R40 · une leçon enregistrée avec l’ancienne question « k-read » se reconstruit sans erreur", () => {
+  const J = load();
+  const k = J.items.k[0];
+  const ex = J.makeEx("k", k.id, "test", "k-read");
+  assert.notEqual(ex.kind, "k-read");
+});
