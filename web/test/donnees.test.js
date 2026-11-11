@@ -61,7 +61,7 @@ test("D07 · chaque phrase de QCM et chaque phrase à ordonner est traduite en f
     J.S.settings.lang = "en"; assert.ok(J.trad(jp), `EN : ${jp}`);
   }
   J.S.settings.lang = "fr";
-  assert.equal(sentences.length, 279);
+  assert.equal(sentences.length, 379);
 });
 
 test("D08 · phrases à ordonner : 4 morceaux, la case ★ sur l’un d’eux", () => {
