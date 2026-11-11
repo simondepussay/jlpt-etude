@@ -398,3 +398,14 @@ test("R40 · une leçon enregistrée avec l’ancienne question « k-read » se 
   const ex = J.makeEx("k", k.id, "test", "k-read");
   assert.notEqual(ex.kind, "k-read");
 });
+
+test("R41 · les kanji de prénoms sont retirés des leçons par défaut, et on peut les remettre", () => {
+  const J = load();
+  assert.equal(J.all.k.length - J.items.k.length, 222);
+  assert.ok(J.isExcluded("k", "麟"));
+  assert.ok(!J.isExcluded("k", "涯"), "un 常用漢字 sans mot reste dans les leçons");
+  for (const k of J.all.k.filter((x) => J.isExcluded("k", x.id))) assert.equal(J.kanjiReadWords(k.k).length, 0, k.k);
+  J.setExcluded("k", "麟", false);
+  assert.ok(!J.isExcluded("k", "麟"));
+  assert.ok(J.items.k.some((x) => x.k === "麟"));
+});

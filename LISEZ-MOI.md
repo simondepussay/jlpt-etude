@@ -39,6 +39,7 @@ Le japonais est toujours affiché. Tout le reste (interface, explications, tradu
   - 51–91 : compléments de la liste Coto
   - 92–191 : compléments triés depuis GrammarOtter (253 points → 100 gardés : sans doublons, sans simple vocabulaire ni points N2/N3). Sources dans `outils/ajouts-grammaire/` (`node outils/ajouts-grammaire/fusionner.js` vérifie puis fusionne)
 - Bouton « Pas du N1 » : écarte un mot ou un kanji mal classé (filtre « Retirés » pour le remettre)
+- Les 222 kanji de prénoms (hors 常用漢字 et dans aucun mot : 舜, 麟, 凜…) sont retirés des leçons par défaut ; on peut les remettre un par un (`outils/kanji_prenoms.js`)
 - `Fiches-grammaire-N1.html` : fiches imprimables (`?lang=en` pour l’anglais)
 
 ## Architecture

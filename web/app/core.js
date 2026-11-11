@@ -314,7 +314,9 @@
   };
 
   /* Éléments retirés (« Pas du N1 ») */
-  J.isExcluded = (m, id) => !!(J.S.excluded || {})[m + ":" + id];
+  // Retirés par défaut : les kanji de prénoms (data/n1-kanji-hors.js). Le choix de l’utilisateur passe avant.
+  const HORS = new Set([...(window.DATA["N1-kanji-hors"] || "")].map((k) => "k:" + k));
+  J.isExcluded = (m, id) => { const v = (J.S.excluded || {})[m + ":" + id]; return v === undefined ? HORS.has(m + ":" + id) : !!v; };
   J.refreshItems = function () {
     for (const m of J.MOD_ORDER) J.items[m] = J.all[m].filter((x) => !J.isExcluded(m, x.id));
   };
