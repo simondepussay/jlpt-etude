@@ -409,3 +409,59 @@ test("R41 · les kanji de prénoms sont retirés des leçons par défaut, et on 
   assert.ok(!J.isExcluded("k", "麟"));
   assert.ok(J.items.k.some((x) => x.k === "麟"));
 });
+
+test("R42 · examen blanc : 35 questions, composition fixe, éléments tous différents, barème par section", () => {
+  const J = load();
+  const e = J.buildExam();
+  const count = (k) => e.screens.filter((s) => s.part === k).reduce((a, s) => a + (s.type === "text" ? s.text.q.length : 1), 0);
+  for (const p of J.EXAM.parts) assert.equal(count(p.key), p.n, p.key);
+  const ids = e.screens.filter((s) => s.type === "ex").map((s) => s.ex.m + ":" + s.ex.id);
+  assert.equal(new Set(ids).size, ids.length);
+  assert.equal(e.screens.filter((s) => s.type === "text").map((s) => s.text.kind).join(), "court,moyen");
+  assert.ok(!e.screens.some(J.examAnswered));
+  assert.equal(J.examScore(e).sur60.langue, 0);
+  // tout juste → 60/60 dans chaque section
+  for (const sc of e.screens) {
+    if (sc.type === "text") sc.picks = sc.order.map((o) => o.indexOf(0));
+    else if (sc.ex.mode === "order") sc.ex.picks = [0, 1, 2, 3];
+    else sc.pick = sc.ex.options.indexOf(sc.ex.answer);
+  }
+  assert.ok(e.screens.every(J.examAnswered));
+  const r = JSON.parse(JSON.stringify(J.examScore(e)));
+  assert.deepEqual(r.sur60, { langue: 60, lecture: 60 });
+  assert.deepEqual(r.langue, [31, 31]);
+  // une erreur de lecture sur 4 → 45/60
+  const t = e.screens.find((s) => s.type === "text");
+  t.picks[0] = t.order[0].indexOf(1);
+  assert.equal(J.examScore(e).sur60.lecture, 45);
+});
+
+test("R43 · lecture : le texte proposé est le premier jamais lu, puis le plus ancien ; un examen enregistre ses textes", () => {
+  const J = load();
+  assert.equal(J.nextText().id, J.texts[0].id);
+  J.readDone(J.texts[0].id, 1, 1, 120);
+  assert.equal(J.nextText().id, J.texts[1].id);
+  assert.equal(J.nextText("moyen").kind, "moyen");
+  assert.equal(J.S.reading[J.texts[0].id].n, 1);
+  assert.ok(J.day().sec >= 120);
+  J.examDone({ at: "2026-10-10T03:00:00.000Z", sec: 1500, parts: { yomi: [5, 6] } }, [{ id: J.texts[0].id, ok: 0, total: 1 }]);
+  assert.equal(J.S.exams.length, 1);
+  assert.equal(J.S.reading[J.texts[0].id].n, 2);
+});
+
+test("R44 · fusion de deux appareils : lectures et examens blancs sont réunis", () => {
+  const J = load();
+  const a = J.defaultState(), b = J.defaultState();
+  a.updatedAt = "2026-10-09T00:00:00Z"; b.updatedAt = "2026-10-10T00:00:00Z";
+  a.reading = { t01: { n: 2, ok: 1, total: 1, sec: 100, at: "2026-10-08" }, t02: { n: 1, ok: 0, total: 1, sec: 90, at: "2026-10-08" } };
+  b.reading = { t01: { n: 1, ok: 0, total: 1, sec: 200, at: "2026-10-09" }, t03: { n: 1, ok: 1, total: 1, sec: 80, at: "2026-10-09" } };
+  a.exams = [{ at: "2026-10-01T00:00:00Z", sec: 10, parts: {} }, { at: "2026-10-05T00:00:00Z", sec: 20, parts: {} }];
+  b.exams = [{ at: "2026-10-05T00:00:00Z", sec: 20, parts: {} }, { at: "2026-10-09T00:00:00Z", sec: 30, parts: {} }];
+  const m = JSON.parse(JSON.stringify(J.merge(a, b)));
+  assert.deepEqual(Object.keys(m.reading).sort(), ["t01", "t02", "t03"]);
+  assert.equal(m.reading.t01.n, 2);
+  assert.deepEqual(m.exams.map((e) => e.sec), [10, 20, 30]);
+  // une sauvegarde d’avant la lecture (sans ces champs) se fusionne sans erreur
+  delete a.reading; delete a.exams;
+  assert.equal(J.merge(a, b).exams.length, 2);
+});

@@ -1,6 +1,6 @@
 # JLPT Étude — N1
 
-Site d’étude quotidienne pour le JLPT : **漢字 Kanji · 語彙 Vocabulaire · 文法 Grammaire**.
+Site d’étude quotidienne pour le JLPT : **漢字 Kanji · 語彙 Vocabulaire · 文法 Grammaire · 読解 Lecture**.
 Version web d’abord ; une application iPhone viendra ensuite, branchée sur la même API et les mêmes comptes.
 
 - **Site** : https://jlpt.simondepussay.com (ancienne adresse https://purple-flower-00ac22900.5.azurestaticapps.net : bandeau de déménagement)
@@ -40,6 +40,8 @@ Le japonais est toujours affiché. Tout le reste (interface, explications, tradu
   - 92–191 : compléments triés depuis GrammarOtter (253 points → 100 gardés : sans doublons, sans simple vocabulaire ni points N2/N3). Sources dans `outils/ajouts-grammaire/` (`fusionner.js` vérifie puis ajoute les points ; `completer.js` ajoute les pièges et les phrases à ordonner ★ depuis `complements*.js`)
 - Bouton « Pas du N1 » : écarte un mot ou un kanji mal classé (filtre « Retirés » pour le remettre)
 - Les 222 kanji de prénoms (hors 常用漢字 et dans aucun mot : 舜, 麟, 凜…) sont retirés des leçons par défaut ; on peut les remettre un par un (`outils/kanji_prenoms.js`)
+- **Lecture 読解** : 12 textes originaux au format de l’examen (8 短文 à 1 question, 4 中文 à 3 questions), chronométrés, avec correction expliquée, traduction et mots du texte (`web/data/n1-lecture.js`). L’accueil propose un texte par jour.
+- **Examen blanc 模擬試験** : 35 questions en 40 minutes sans correction avant la fin (漢字読み 6, 語彙 10, 文法 10, 文の組み立て 5, 読解 4), tirées de tout le programme. Résultat par partie et estimation sur 60 pour 言語知識 et 読解 ; l’écoute (聴解) n’est pas mesurée. Historique dans *Progression*.
 - `Fiches-grammaire-N1.html` : fiches imprimables (`?lang=en` pour l’anglais)
 
 ## Architecture

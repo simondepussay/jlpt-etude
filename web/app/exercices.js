@@ -179,6 +179,59 @@
     })
   };
 
+  /* ───────── Examen blanc (模擬試験) ─────────
+     言語知識 (文字・語彙・文法) + 読解, sans correction avant la fin. Les questions sont tirées de tout le
+     programme N1, appris ou non : c’est une mesure, pas une révision. */
+  J.EXAM = {
+    minutes: 40,
+    parts: [
+      { key: "yomi", jp: "漢字読み", fr: "Lecture des kanji", en: "Kanji reading", n: 6, sec: "langue" },
+      { key: "goi", jp: "語彙", fr: "Vocabulaire", en: "Vocabulary", n: 10, sec: "langue" },
+      { key: "bunpo", jp: "文法形式の判断", fr: "Grammaire", en: "Grammar", n: 10, sec: "langue" },
+      { key: "narabe", jp: "文の組み立て", fr: "Phrases à ordonner ★", en: "Sentence order ★", n: 5, sec: "langue" },
+      { key: "dokkai", jp: "読解", fr: "Lecture", en: "Reading", n: 4, sec: "lecture" }
+    ]
+  };
+  J.buildExam = function () {
+    const N = Object.fromEntries(J.EXAM.parts.map((p) => [p.key, p.n]));
+    const take = (pool, n) => shuffle(pool).slice(0, n);
+    const yomi = take(J.items.v.filter((v) => v.w !== v.r && /[一-龯]/.test(v.w)), N.yomi);
+    const seen = new Set(yomi.map((v) => v.id));
+    const goi = take(J.items.v.filter((v) => !seen.has(v.id)), N.goi);
+    const bunpo = take(J.items.g, N.bunpo);
+    const seenG = new Set(bunpo.map((g) => g.id));
+    const narabe = take(J.items.g.filter((g) => g.o && !seenG.has(g.id)), N.narabe);
+    const ex = (part, m, x, kind) => ({ part, type: "ex", ex: J.makeEx(m, x.id, "test", kind) });
+    const screens = [
+      ...yomi.map((v) => ex("yomi", "v", v, "v-read")),
+      ...goi.map((v, i) => ex("goi", "v", v, i % 2 ? "v-word" : "v-mean")),
+      ...bunpo.map((g) => ex("bunpo", "g", g, "g-qcm")),
+      ...narabe.map((g) => ex("narabe", "g", g, "g-ord")),
+      ...[J.nextText("court"), J.nextText("moyen")].filter(Boolean)
+        .map((t) => ({ part: "dokkai", type: "text", text: t, picks: [], order: t.q.map(() => shuffle([0, 1, 2, 3])) }))
+    ];
+    return { minutes: J.EXAM.minutes, screens };
+  };
+  // Une question (ou toutes celles d’un texte) a-t-elle reçu une réponse ?
+  J.examAnswered = (sc) => (sc.type === "text" ? sc.text.q.every((_, i) => sc.picks[i] !== undefined)
+    : sc.ex.mode === "order" ? sc.ex.picks.length === 4 : sc.pick !== undefined);
+  // Bonnes réponses d’un écran : [bonnes, total]
+  J.examMark = (sc) => (sc.type === "text" ? [sc.text.q.filter((_, i) => sc.order[i][sc.picks[i]] === 0).length, sc.text.q.length]
+    : sc.ex.mode === "order" ? [sc.ex.picks.length === 4 && sc.ex.picks.every((p, k) => p === k) ? 1 : 0, 1]
+    : [sc.ex.options[sc.pick] === sc.ex.answer ? 1 : 0, 1]);
+  /* Résultat : par partie, puis par section. « sur60 » ramène la part de bonnes réponses à l’échelle du JLPT
+     (60 points par section) : c’est une estimation, la vraie notation est pondérée. */
+  J.examScore = function (exam) {
+    const parts = {}, secs = { langue: [0, 0], lecture: [0, 0] };
+    for (const p of J.EXAM.parts) parts[p.key] = [0, 0];
+    for (const sc of exam.screens) {
+      const [ok, tot] = J.examMark(sc), s = secs[J.EXAM.parts.find((p) => p.key === sc.part).sec];
+      parts[sc.part][0] += ok; parts[sc.part][1] += tot; s[0] += ok; s[1] += tot;
+    }
+    const sur60 = ([ok, tot]) => (tot ? Math.round((ok / tot) * 60) : 0);
+    return { parts, langue: secs.langue, lecture: secs.lecture, sur60: { langue: sur60(secs.langue), lecture: sur60(secs.lecture) } };
+  };
+
   /* ───────── Fiches d’apprentissage ───────── */
   J.learnCard = function (m, id) {
     const x = J.byId[m][id];

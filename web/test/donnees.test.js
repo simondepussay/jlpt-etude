@@ -84,3 +84,25 @@ test("D10 · volumes N1 attendus", () => {
   assert.equal(J.all.k.length, 1232);
   assert.equal(G.length, 190);
 });
+
+test("D11 · chaque texte de lecture : questions à 4 choix distincts, explications, traduction et mots dans les deux langues", () => {
+  assert.ok(J.texts.length >= 12);
+  assert.equal(new Set(J.texts.map((t) => t.id)).size, J.texts.length);
+  for (const t of J.texts) {
+    assert.ok(["court", "moyen"].includes(t.kind), t.id);
+    assert.equal(t.q.length, t.kind === "court" ? 1 : 3, t.id);
+    assert.ok(t.titre[0] && t.titre[1] && t.tr[0] && t.tr[1], `titre ou traduction : ${t.id}`);
+    assert.equal(t.tr[0].split("\n").length, t.tr[1].split("\n").length, `paragraphes de traduction : ${t.id}`);
+    const n = t.jp.replace(/\[\[|\]\]|\s/g, "").length;
+    assert.ok(t.kind === "court" ? n >= 150 && n <= 320 : n >= 450 && n <= 750, `${t.id} : ${n} caractères`);
+    for (const q of t.q) {
+      assert.equal(new Set(q.c).size, 4, `${t.id} : ${q.q}`);
+      assert.ok(q.e[0] && q.e[1], `explication : ${t.id}`);
+      // un passage cité entre 「 」 avec ①/② dans la question doit être souligné dans le texte
+      const m = q.q.match(/^[①②③]「(.+?)」/);
+      if (m) assert.ok(t.jp.includes(`[[${m[1]}`), `${t.id} : passage non souligné « ${m[1]} »`);
+    }
+    assert.ok(t.mots.length >= 4, t.id);
+    for (const w of t.mots) assert.ok(w.length === 4 && w.every(Boolean), `${t.id} : ${w[0]}`);
+  }
+});

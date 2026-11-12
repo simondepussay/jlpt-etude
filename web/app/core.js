@@ -51,6 +51,10 @@
   J.kanjiReadWords = (ch) => (J.kanjiWords[ch] || []).map((id) => J.byId.v[id]).filter((v) => v && v.w !== v.r)
     .concat((KMOTS[ch] || []).map(([w, r]) => ({ w, r })));
 
+  // Textes de lecture (読解)
+  J.texts = D[J.LEVEL + "-lecture"] || [];
+  J.textById = Object.fromEntries(J.texts.map((t) => [t.id, t]));
+
   /* ───────── Dates ───────── */
   const pad = (n) => String(n).padStart(2, "0");
   J.today = (d = new Date()) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -101,6 +105,8 @@
     timing: JSON.parse(JSON.stringify(DEFAULT_TIMING)),
     notes: {},
     excluded: {},
+    reading: {},   // 読解 : texte → { n: lectures, ok, total, sec, at }
+    exams: [],     // examens blancs : { at, sec, parts: { clé: [bonnes, total] } }
     lesson: null,
     settingsAt: null,
     paceAck: null
@@ -202,6 +208,15 @@
     out.notes = { ...b.notes, ...a.notes, ...newer.notes };
     const older = newer === a ? b : a;
     out.excluded = { ...(older.excluded || {}), ...(newer.excluded || {}) };
+    // lecture : pour chaque texte, le côté qui l’a lu le plus de fois (à égalité, le plus récent)
+    out.reading = {};
+    for (const k of new Set([...Object.keys(a.reading || {}), ...Object.keys(b.reading || {})])) {
+      const x = (a.reading || {})[k], y = (b.reading || {})[k];
+      out.reading[k] = !x || !y ? x || y : x.n !== y.n ? (x.n > y.n ? x : y) : (x.at >= y.at ? x : y);
+    }
+    // examens blancs : on réunit les deux listes (un examen = son horodatage)
+    out.exams = [...new Map([...(a.exams || []), ...(b.exams || [])].map((e) => [e.at, e])).values()]
+      .sort((x, y) => (x.at < y.at ? -1 : 1)).slice(-50);
     return out;
   };
 
@@ -382,6 +397,28 @@
     const floors = { learn: m === "g" ? 45 : 6, rev: m === "g" ? 10 : 4, test: m === "g" ? 12 : 5 };
     T[kind] = Math.max(floors[kind], Math.round((T[kind] * 0.85 + sec * 0.15) * 10) / 10);
     J.day().sec += sec;
+  };
+
+  /* ───────── Lecture (読解) et examens blancs ───────── */
+  J.readDone = function (id, ok, total, sec) {
+    const all = (J.S.reading = J.S.reading || {});
+    all[id] = { n: ((all[id] || {}).n || 0) + 1, ok, total, sec: Math.round(sec), at: J.today() };
+    J.day().sec += Math.max(1, Math.min(sec, 1200));
+    J.save(true);
+  };
+  // Prochain texte à lire : le premier jamais lu, sinon celui lu il y a le plus longtemps
+  J.nextText = function (kind) {
+    const rd = J.S.reading || {}, list = J.texts.filter((t) => !kind || t.kind === kind);
+    return list.find((t) => !rd[t.id])
+      || list.slice().sort((x, y) => (rd[x.id].at !== rd[y.id].at ? (rd[x.id].at < rd[y.id].at ? -1 : 1) : rd[x.id].n - rd[y.id].n))[0] || null;
+  };
+  // res : { at, sec, parts } · texts : [{ id, ok, total }] lus pendant l’examen
+  J.examDone = function (res, texts = []) {
+    J.S.exams = (J.S.exams || []).concat([res]).slice(-50);
+    const all = (J.S.reading = J.S.reading || {});
+    for (const t of texts) all[t.id] = { n: ((all[t.id] || {}).n || 0) + 1, ok: t.ok, total: t.total, sec: null, at: J.today() };
+    J.day().sec += Math.max(1, Math.min(res.sec, 3600));
+    J.save(true);
   };
 
   /* ───────── Statistiques ───────── */

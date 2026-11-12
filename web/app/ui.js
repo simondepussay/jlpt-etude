@@ -20,7 +20,7 @@
     clearInterval(tick);
     document.documentElement.lang = J.lang();
     if (!J.S.onboarded && view.name !== "onboarding" && view.name !== "account") view = { name: "onboarding", p: {} };
-    const inRun = view.name === "run";
+    const inRun = ["run", "read", "exam"].includes(view.name);
     let body;
     try { body = VIEWS[view.name](view.p); }
     catch (e) {
@@ -33,6 +33,17 @@
     if (view.name === "run" && R && R.timed) {
       tick = setInterval(() => { const el = document.getElementById("timer"); if (el) el.textContent = fmtClock((Date.now() - R.started) / 1000); }, 1000);
     }
+    // 読解 : chronomètre d’un texte (data-t0) ou compte à rebours de l’examen (data-end)
+    const tm = document.getElementById("timer");
+    if (tm && tm.dataset && (tm.dataset.t0 || tm.dataset.end)) tick = setInterval(() => {
+      const el = document.getElementById("timer");
+      if (!el) return;
+      if (el.dataset.t0) { el.textContent = fmtClock((Date.now() - +el.dataset.t0) / 1000); return; }
+      const left = (+el.dataset.end - Date.now()) / 1000;
+      el.textContent = fmtClock(Math.max(0, left));
+      el.classList.toggle("low", left < 300);
+      if (left <= 0) A["xm-finish"]({ force: true });
+    }, 1000);
     if (view.name === "account") J.mountGoogle(document.getElementById("g-btn"));
     const f = app.querySelector("[autofocus]");
     if (f) f.focus();
@@ -60,8 +71,8 @@
     <button class="${J.lang() === "fr" ? "on" : ""}" data-act="set-lang" data-l="fr">FR</button><button class="${J.lang() === "en" ? "on" : ""}" data-act="set-lang" data-l="en">EN</button></div>`;
 
   function nav() {
-    const tabs = [["home", "今日", L("Aujourd’hui", "Today")], ["mod-v", "語彙", J.modName("v")], ["mod-k", "漢字", J.modName("k")], ["mod-g", "文法", J.modName("g")], ["progress", "進捗", L("Progression", "Progress")], ["settings", "設定", L("Réglages", "Settings")]];
-    const cur = view.name === "mod" ? "mod-" + view.p.m : view.name === "item" ? "mod-" + view.p.m : view.name;
+    const tabs = [["home", "今日", L("Aujourd’hui", "Today")], ["mod-v", "語彙", J.modName("v")], ["mod-k", "漢字", J.modName("k")], ["mod-g", "文法", J.modName("g")], ["reading", "読解", L("Lecture", "Reading")], ["progress", "進捗", L("Progression", "Progress")], ["settings", "設定", L("Réglages", "Settings")]];
+    const cur = view.name === "mod" ? "mod-" + view.p.m : view.name === "item" ? "mod-" + view.p.m : view.name === "exam-result" ? "reading" : view.name;
     const u = J.user(), bad = J.store.status === "error" || J.store.status === "offline" || J.store.expired;
     const st = u
       ? `<button class="save ${bad ? "err" : "ok"} ${cur === "account" ? "on" : ""}" data-act="nav" data-v="account" title="${esc(J.store.error || L("Progression synchronisée sur ton compte", "Progress synced to your account") + (J.store.lastSave ? " · " + J.store.lastSave.toLocaleTimeString(J.locale()) : ""))}">${bad ? "⚠︎" : '<i class="save-pt" aria-hidden="true"></i>'} ${esc(u.name || u.email || L("Mon compte", "My account"))}</button>`
@@ -656,6 +667,154 @@
     window.scrollTo(0, 0);
   }
 
+  /* ───────── 読解 : textes chronométrés et examen blanc ───────── */
+  let RD = null;  // texte en cours de lecture
+  let XM = null;  // examen blanc en cours
+  const TKIND = () => ({ court: ["短文", L("Texte court", "Short text")], moyen: ["中文", L("Texte moyen", "Mid-length text")] });
+  const TARGET = { court: 180, moyen: 420 };   // temps visé en secondes, au rythme de l’examen
+  const nChars = (t) => t.jp.replace(/\[\[|\]\]|\s/g, "").length;
+  const tTitle = (t) => L(t.titre[0], t.titre[1]);
+  const sur60 = ([ok, tot]) => (tot ? Math.round((ok / tot) * 60) : 0);
+  const passage = (t) => `<div class="passage jp" lang="ja">${t.jp.split("\n").map((p) => `<p>${esc(p).replace(/\[\[(.+?)\]\]/g, "<u>$1</u>")}</p>`).join("")}</div>`;
+  // Questions d’un texte. st : { picks, order } · done : affiche la correction · act : action au clic
+  const textQuestions = (t, st, done, act) => t.q.map((q, qi) => `<div class="rq"><p class="rq-q jp" lang="ja"><b>問${qi + 1}</b>${esc(q.q)}</p>
+    <div class="opts col">${st.order[qi].map((ci, i) => {
+      const mine = st.picks[qi] === i;
+      const cls = done ? (ci === 0 ? "ok" : mine ? "ko" : "dim") : mine ? "sel" : "";
+      return `<button class="opt jp ${cls}" data-act="${act}" data-q="${qi}" data-i="${i}" ${done ? "disabled" : ""}><span class="bubble">${CIRCLED[i]}</span><span class="opt-t">${esc(q.c[ci])}</span>${done ? (ci === 0 ? HANAMARU : mine ? BATSU : "") : ""}</button>`;
+    }).join("")}</div>${done ? `<p class="rq-e">${esc(L(q.e[0], q.e[1]))}</p>` : ""}</div>`).join("");
+  const textAids = (t) => `<details class="tr"><summary>${L("Traduction du texte", "Translation of the text")}</summary>${L(t.tr[0], t.tr[1]).split("\n").map((p) => `<p>${esc(p)}</p>`).join("")}</details>
+    <details class="tr" open><summary>${L("Mots du texte", "Words from the text")}</summary>${t.mots.map(([w, r, fr, en]) => `<div class="wline"><span class="jp" lang="ja">${esc(w)}</span><span class="jp muted" lang="ja">${esc(r)}</span><span>${esc(L(fr, en))}</span><button class="icon-btn sm" data-act="say" data-say="${esc(r)}">🔊</button></div>`).join("")}</details>`;
+
+  // Sections (言語知識 / 読解) d’un examen enregistré
+  const examSecs = (e) => {
+    const s = { langue: [0, 0], lecture: [0, 0] };
+    for (const p of J.EXAM.parts) { const x = e.parts[p.key] || [0, 0]; s[p.sec][0] += x[0]; s[p.sec][1] += x[1]; }
+    return s;
+  };
+  const examCard = () => {
+    const last = (J.S.exams || []).slice(-1)[0], nq = J.EXAM.parts.reduce((a, p) => a + p.n, 0);
+    const s = last && examSecs(last);
+    return `<section class="card exam-card"><div><h3><span class="jp">模擬試験</span> ${L("Examen blanc", "Mock exam")}</h3>
+      <p class="muted">${L(`${nq} questions en ${J.EXAM.minutes} minutes, sans correction avant la fin : 漢字読み, 語彙, 文法, 文の組み立て et 読解, tirées de tout le programme N1 (appris ou non).`,
+        `${nq} questions in ${J.EXAM.minutes} minutes, with no feedback until the end: 漢字読み, 語彙, 文法, 文の組み立て and 読解, drawn from the whole N1 syllabus (learned or not).`)}</p>
+      ${last ? `<p class="small">${L("Dernier examen", "Last exam")} (${J.fmtShort(last.at.slice(0, 10))}) : 言語知識 <b>${sur60(s.langue)}</b>/60 · 読解 <b>${sur60(s.lecture)}</b>/60</p>` : ""}</div>
+      <button class="btn primary" data-act="xm-start">${L("Commencer l’examen", "Start the exam")}</button></section>`;
+  };
+
+  VIEWS.reading = () => {
+    const rd = J.S.reading || {}, next = J.nextText(), kinds = TKIND();
+    const read = J.texts.filter((t) => rd[t.id]);
+    const ok = read.reduce((a, t) => a + rd[t.id].ok, 0), tot = read.reduce((a, t) => a + rd[t.id].total, 0);
+    return `<section class="mod-head"><div><h1><span class="jp">読解</span> ${L("Lecture", "Reading")} <small>${J.LEVEL}</small></h1>
+      <p class="muted">${L("Des textes au format de l’examen, chronométrés. La lecture vaut 60 points sur 180 au JLPT : un texte par jour d’étude suffit pour prendre le rythme.",
+        "Exam-format texts, timed. Reading is worth 60 of the JLPT’s 180 points: one text per study day is enough to build the pace.")}</p>
+      <div class="legend"><span>${read.length} / ${J.texts.length} ${L("textes lus", "texts read")}</span>${tot ? `<span>${L("Réussite", "Accuracy")} ${pct(ok, tot)} %</span>` : ""}</div></div>
+      <div class="row">${next ? `<button class="btn primary" data-act="read-open" data-id="${next.id}">${L("Texte du jour", "Today’s text")} →</button>` : ""}</div></section>
+      ${examCard()}
+      <div class="tlist">${J.texts.map((t, i) => { const r = rd[t.id];
+        return `<button class="trow" data-act="read-open" data-id="${t.id}"><span class="trow-n">${String(i + 1).padStart(2, "0")}</span><span class="pill jp">${kinds[t.kind][0]}</span>
+          <span class="trow-t">${esc(tTitle(t))}<small>${nChars(t)}字 · ${t.q.length} ${t.q.length > 1 ? "questions" : "question"}</small></span>
+          <span class="trow-s">${r ? `<b class="${r.ok === r.total ? "good" : "bad"}">${r.ok}/${r.total}</b><small>${r.sec ? fmtClock(r.sec) + " · " : ""}${J.fmtShort(r.at)}</small>` : `<small>${L("pas encore lu", "not read yet")}</small>`}</span></button>`; }).join("")}</div>`;
+  };
+
+  VIEWS.read = ({ id }) => {
+    const t = J.textById[id];
+    if (!t) return VIEWS.reading();
+    if (!RD || RD.id !== id) RD = { id, t0: Date.now(), picks: [], order: t.q.map(() => J.shuffle([0, 1, 2, 3])), done: false };
+    const all = t.q.every((_, i) => RD.picks[i] !== undefined);
+    const head = `<div class="run-head"><button class="link" data-act="read-quit">← 読解</button><span class="run-title jp">${TKIND()[t.kind][0]} · ${nChars(t)}字</span>
+      ${RD.done ? `<span class="timer">${fmtClock(RD.sec)}</span>` : `<span id="timer" class="timer" data-t0="${RD.t0}">${fmtClock((Date.now() - RD.t0) / 1000)}</span>`}</div>`;
+    let foot;
+    if (!RD.done) {
+      foot = `<p class="q-help center">${L(`Temps visé : ${fmtClock(TARGET[t.kind])}. Astuce d’examen : lis d’abord la question, puis le texte.`, `Target time: ${fmtClock(TARGET[t.kind])}. Exam tip: read the question first, then the text.`)}</p>
+        <div class="row center"><button class="btn primary big" data-act="rd-check" ${all ? "" : "disabled"}>答え合わせ <span>${L("Vérifier", "Check")}</span></button></div>`;
+    } else {
+      const full = RD.ok === t.q.length, next = J.nextText();
+      foot = `<div class="fb ${full ? "ok" : "ko"}"><span class="fb-jp">${full ? "正解！" : `${RD.ok} / ${t.q.length}`}</span>
+          <span>${fmtClock(RD.sec)} · ${Math.round(nChars(t) / Math.max(RD.sec, 1) * 60)}字/分 · ${RD.sec <= TARGET[t.kind] ? L("dans le temps visé", "within the target time") : L(`temps visé : ${fmtClock(TARGET[t.kind])}`, `target time: ${fmtClock(TARGET[t.kind])}`)}</span></div>
+        ${textAids(t)}
+        <div class="row end"><button class="btn" data-act="read-quit">${L("Liste des textes", "Text list")}</button>${next && next.id !== id ? `<button class="btn primary" data-act="read-open" data-id="${next.id}">${L("Texte suivant", "Next text")} →</button>` : ""}</div>`;
+    }
+    return head + `<section class="card ex reading"><div class="ex-tag"><span class="pill mod-g"><span class="jp">読解</span> ${L("Lecture", "Reading")}</span>${RD.done ? `<span class="muted">${esc(tTitle(t))}</span>` : ""}</div>
+      ${passage(t)}${textQuestions(t, RD, RD.done, "rd-opt")}${foot}</section>`;
+  };
+
+  /* Examen blanc : un écran par question (ou par texte), navigation libre, correction à la fin */
+  const xmOrder = (ex) => `<div class="sentence jp order" lang="ja">${esc(ex.pre)}${[0, 1, 2, 3].map((k) => { const p = ex.picks[k];
+      return `<button class="slot ${k === ex.star ? "star" : ""}" data-act="xm-slot" data-k="${k}">${p !== undefined ? esc(ex.pieces[p]) : k === ex.star ? "★" : "＿＿"}</button>`; }).join("")}${esc(ex.post)}</div>
+    <div class="pieces">${ex.order.map((i) => `<button class="piece jp" data-act="xm-piece" data-i="${i}" ${ex.picks.includes(i) ? "disabled" : ""}>${esc(ex.pieces[i])}</button>`).join("")}</div>
+    <div class="row center"><button class="btn" data-act="xm-clear">${L("Effacer", "Clear")}</button></div>`;
+
+  VIEWS.exam = () => {
+    if (!XM) return VIEWS.reading();
+    if (XM.res) return VIEWS["exam-result"]();
+    const sc = XM.screens[XM.pos], part = J.EXAM.parts.find((p) => p.key === sc.part), last = XM.pos === XM.screens.length - 1;
+    const head = `<div class="run-head"><button class="link" data-act="xm-quit">✕ ${L("Abandonner", "Abandon")}</button><span class="run-title jp">模擬試験 · ${part.jp}</span>
+      <span id="timer" class="timer" data-end="${XM.end}">${fmtClock(Math.max(0, (XM.end - Date.now()) / 1000))}</span></div>
+      <div class="xm-map">${XM.screens.map((s, i) => `<button class="${i === XM.pos ? "on" : ""} ${J.examAnswered(s) ? "done" : ""}" data-act="xm-go" data-i="${i}">${i + 1}</button>`).join("")}</div>`;
+    let body;
+    if (sc.type === "text") body = passage(sc.text) + textQuestions(sc.text, sc, false, "xm-topt");
+    else if (sc.ex.mode === "order") body = sc.ex.prompt + xmOrder(sc.ex);
+    else body = sc.ex.prompt + `<div class="opts ${sc.ex.bigOpts ? "big" : ""}">${sc.ex.options.map((o, i) =>
+      `<button class="opt ${sc.pick === i ? "sel" : ""} ${sc.ex.jpOpts ? "jp" : ""}" data-act="xm-opt" data-i="${i}"><span class="bubble">${CIRCLED[i]}</span><span class="opt-t">${esc(o)}</span></button>`).join("")}</div>`;
+    return head + `<section class="card ex ${sc.type === "text" ? "reading" : ""}"><div class="ex-tag"><span class="pill stage-test jp">${part.jp}</span><span class="muted">${L(part.fr, part.en)}</span></div>${body}
+      <div class="row end">${XM.pos ? `<button class="btn" data-act="xm-go" data-i="${XM.pos - 1}">← ${L("Précédent", "Previous")}</button>` : ""}
+      ${last ? `<button class="btn primary" data-act="xm-finish">${L("Terminer l’examen", "Finish the exam")}</button>` : `<button class="btn primary" data-act="xm-go" data-i="${XM.pos + 1}">${L("Suivant", "Next")} →</button>`}</div></section>
+      ${last ? "" : `<p class="center"><button class="link" data-act="xm-finish">${L("Terminer l’examen maintenant", "Finish the exam now")}</button></p>`}`;
+  };
+
+  VIEWS["exam-result"] = () => {
+    if (!XM || !XM.res) return VIEWS.reading();
+    const r = XM.res, PASS = 19;
+    const okAll = r.langue[0] + r.lecture[0], totAll = r.langue[1] + r.lecture[1];
+    const section = (jp, label, v, n) => `<div class="kpi"><b>${n}<small> /60</small></b><span><span class="jp">${jp}</span> ${label} · ${v[0]}/${v[1]}</span>
+      <span class="pill ${n >= PASS ? "good" : "bad"}">${n >= PASS ? L("au-dessus du seuil de 19", "above the pass mark of 19") : L("sous le seuil de 19", "below the pass mark of 19")}</span></div>`;
+    const wrong = XM.screens.filter((s) => { const [ok, tot] = J.examMark(s); return ok < tot; });
+    const fix = (s) => {
+      if (s.type === "text") return `<section class="card ex reading"><div class="ex-tag"><span class="pill stage-test jp">読解</span><span class="muted">${esc(tTitle(s.text))}</span></div>${passage(s.text)}${textQuestions(s.text, s, true, "")}${textAids(s.text)}</section>`;
+      const ex = s.ex, part = J.EXAM.parts.find((p) => p.key === s.part);
+      const mine = ex.mode === "order" ? (ex.picks.length ? ex.picks.map((p) => ex.pieces[p]).join(" → ") : "") : s.pick !== undefined ? ex.options[s.pick] : "";
+      return `<section class="card ex"><div class="ex-tag"><span class="pill stage-test jp">${part.jp}</span></div>${ex.prompt}
+        <p class="xm-mine">${L("Ta réponse", "Your answer")} : <b class="jp">${mine ? esc(mine) : "—"}</b>${ex.mode === "choice" ? ` · ${L("La bonne réponse", "The right answer")} : <b class="jp good">${esc(ex.answer)}</b>` : ""}</p>${ex.back}</section>`;
+    };
+    return `<section class="card finish"><h1>模擬試験 · 結果</h1>
+      <p class="score">${pct(okAll, totAll)} % <small>${okAll} / ${totAll} · ${fmtClock(XM.sec)}</small></p>
+      <div class="kpis two">${section("言語知識", L("Langue", "Language"), r.langue, r.sur60.langue)}${section("読解", L("Lecture", "Reading"), r.lecture, r.sur60.lecture)}</div>
+      <table class="plan"><tbody>${J.EXAM.parts.map((p) => { const v = r.parts[p.key];
+        return `<tr><th><span class="jp">${p.jp}</span> ${L(p.fr, p.en)}</th><td>${v[0]} / ${v[1]}</td><td class="${pct(v[0], v[1]) >= 60 ? "good" : "bad"}">${pct(v[0], v[1])} %</td></tr>`; }).join("")}</tbody></table>
+      <p class="muted small">${L("Estimation sur 60 par simple proportion de bonnes réponses. Au vrai JLPT, la notation est pondérée, la lecture compte bien plus de textes, et s’y ajoute l’écoute (聴解, 60 points) que cet examen ne mesure pas. Seuil : 19/60 par section et 100/180 au total.",
+        "Scores out of 60 are a simple proportion of correct answers. On the real JLPT, scoring is scaled, reading has many more texts, and listening (聴解, 60 points) is added, which this exam does not measure. Pass marks: 19/60 per section and 100/180 overall.")}</p>
+      <div class="row center"><button class="btn primary" data-act="xm-close">${L("Retour à la lecture", "Back to reading")}</button><button class="btn" data-act="xm-start">${L("Refaire un examen", "Take another exam")}</button></div></section>
+      ${wrong.length ? `<h2 class="xm-h">${L("Correction", "Review")} <small>${wrong.length}</small></h2>${wrong.map(fix).join("")}` : `<p class="center">${L("Aucune erreur, bravo !", "No mistakes, well done!")}</p>`}`;
+  };
+
+  // Accueil : rappel du texte du jour
+  const home0 = VIEWS.home;
+  VIEWS.home = () => {
+    const t = J.nextText();
+    if (!t) return home0();
+    const today = Object.values(J.S.reading || {}).some((r) => r.at === J.today());
+    return home0() + `<section class="card dokkai"><div><h3><span class="jp">読解</span> ${L("Lecture", "Reading")}${today ? " " + stamp("済", "dokkai" + J.today()) : ""}</h3>
+      <p class="muted">${today ? L("Texte du jour lu. Envie d’un autre ?", "Today’s text is done. Fancy another?") : L("Un texte par jour d’étude : la lecture vaut un tiers de l’examen.", "One text per study day: reading is a third of the exam.")}
+      <span class="jp">${TKIND()[t.kind][0]}</span> · ${nChars(t)}字 · ${L("environ", "about")} ${Math.round(TARGET[t.kind] / 60)} min</p></div>
+      <div class="row"><button class="btn ${today ? "" : "primary"}" data-act="read-open" data-id="${t.id}">${L("Lire un texte", "Read a text")} →</button><button class="btn" data-act="nav" data-v="reading">${L("Examen blanc", "Mock exam")}</button></div></section>`;
+  };
+
+  // Progression : lecture et historique des examens blancs
+  const progress0 = VIEWS.progress;
+  VIEWS.progress = () => {
+    const rd = J.S.reading || {}, read = J.texts.filter((t) => rd[t.id]);
+    const ok = read.reduce((a, t) => a + rd[t.id].ok, 0), tot = read.reduce((a, t) => a + rd[t.id].total, 0);
+    const exams = (J.S.exams || []).slice(-8).reverse();
+    return progress0() + `<div class="card"><h3><span class="jp">読解・模擬試験</span> ${L("Lecture et examens blancs", "Reading and mock exams")}</h3>
+      <p>${read.length} / ${J.texts.length} ${L("textes lus", "texts read")}${tot ? ` · ${L("réussite", "accuracy")} ${pct(ok, tot)} %` : ""}</p>
+      ${exams.length ? `<table class="plan"><thead><tr><th>${L("Examen", "Exam")}</th><th>言語知識 /60</th><th>読解 /60</th><th>${L("Bonnes réponses", "Correct")}</th><th>${L("Durée", "Time")}</th></tr></thead><tbody>${exams.map((e) => { const s = examSecs(e);
+        return `<tr><th>${J.fmtShort(e.at.slice(0, 10))}</th><td class="${sur60(s.langue) >= 19 ? "good" : "bad"}">${sur60(s.langue)}</td><td class="${sur60(s.lecture) >= 19 ? "good" : "bad"}">${sur60(s.lecture)}</td><td>${s.langue[0] + s.lecture[0]} / ${s.langue[1] + s.lecture[1]}</td><td>${fmtClock(e.sec)}</td></tr>`; }).join("")}</tbody></table>`
+        : `<p class="muted">${L("Aucun examen blanc pour l’instant.", "No mock exam yet.")}</p>`}
+      <div class="row"><button class="btn" data-act="nav" data-v="reading">${L("Ouvrir la lecture", "Open reading")}</button></div></div>`;
+  };
+
   // Accès pour les tests automatiques (construction de leçon, rattrapage)
   J._test = {
     buildLesson, extendLesson, result,
@@ -768,6 +927,42 @@
       J.S.settingsAt = new Date().toISOString(); J.save(true); R = null; J.go("onboarding");
     }
   };
+
+  /* Actions de la lecture et de l’examen blanc */
+  Object.assign(A, {
+    "read-open": (d) => { RD = null; J.go("read", { id: d.id }); },
+    "read-quit": () => { RD = null; J.go("reading"); },
+    "rd-opt": (d) => { if (RD && !RD.done) { RD.picks[+d.q] = +d.i; render(); } },
+    "rd-check": () => {
+      const t = RD && J.textById[RD.id];
+      if (!t || RD.done || !t.q.every((_, i) => RD.picks[i] !== undefined)) return;
+      RD.done = true;
+      RD.sec = (Date.now() - RD.t0) / 1000;
+      RD.ok = t.q.filter((_, i) => RD.order[i][RD.picks[i]] === 0).length;
+      J.readDone(RD.id, RD.ok, t.q.length, RD.sec);
+      render();
+    },
+    "xm-start": () => { const e = J.buildExam(); XM = { ...e, pos: 0, started: Date.now(), end: Date.now() + e.minutes * 60000 }; J.go("exam"); },
+    "xm-go": (d) => { XM.pos = Math.max(0, Math.min(XM.screens.length - 1, +d.i)); render(); window.scrollTo(0, 0); },
+    "xm-opt": (d) => { XM.screens[XM.pos].pick = +d.i; render(); },
+    "xm-topt": (d) => { XM.screens[XM.pos].picks[+d.q] = +d.i; render(); },
+    "xm-piece": (d) => { const p = XM.screens[XM.pos].ex.picks; if (p.length < 4 && !p.includes(+d.i)) { p.push(+d.i); render(); } },
+    "xm-slot": (d) => { const p = XM.screens[XM.pos].ex.picks; if (+d.k < p.length) { p.splice(+d.k, 1); render(); } },
+    "xm-clear": () => { XM.screens[XM.pos].ex.picks = []; render(); },
+    "xm-quit": () => { if (confirm(L("Abandonner l’examen ? Il ne sera pas enregistré.", "Abandon the exam? It will not be saved."))) { XM = null; J.go("reading"); } },
+    "xm-close": () => { XM = null; J.go("reading"); },
+    // force : le temps est écoulé, on termine sans demander
+    "xm-finish": (d) => {
+      if (!XM || XM.res) return;
+      const left = XM.screens.filter((s) => !J.examAnswered(s)).length;
+      if (!(d && d.force) && left && !confirm(L(`Il reste ${left} écran(s) sans réponse complète. Terminer quand même ?`, `${left} screen(s) are not fully answered. Finish anyway?`))) return;
+      XM.res = J.examScore(XM);
+      XM.sec = Math.round((Date.now() - XM.started) / 1000);
+      J.examDone({ at: new Date().toISOString(), sec: XM.sec, parts: XM.res.parts },
+        XM.screens.filter((s) => s.type === "text").map((s) => { const [ok, total] = J.examMark(s); return { id: s.text.id, ok, total }; }));
+      J.go("exam-result");
+    }
+  });
 
   app.addEventListener("click", (e) => {
     const el = e.target.closest("[data-act]");
