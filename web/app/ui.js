@@ -435,7 +435,20 @@
   };
 
   /* Compte */
-  const PROV = { google: "Google", apple: "Apple", microsoft: "Microsoft" };
+  const PROV = { google: "Google", apple: "Apple", microsoft: "Microsoft", cleanwork: "Clean Work" };
+  const CW_ON = () => J.providers.some((p) => p.id === "cleanwork" && p.enabled);
+  // Mon compte : associer (ou retirer) le compte Clean Work, pour ouvrir la même progression des deux façons
+  const cleanworkLink = (u) => {
+    if (!CW_ON() || u.provider === "cleanwork") return "";
+    const l = (u.links || []).find((x) => x.provider === "cleanwork");
+    return `<section class="card"><h3>Clean Work</h3>
+      ${l ? `<p class="good">● ${L("Compte Clean Work associé", "Clean Work account linked")}${l.email ? ` (${esc(l.email)})` : ""}.</p>
+          <p class="muted small">${L("Tu peux te connecter ici avec Google ou avec Clean Work : c’est la même progression.", "You can sign in here with Google or with Clean Work: it is the same progress.")}</p>
+          <div class="row"><button class="btn" data-act="unlink-cw">${L("Retirer l’association", "Remove the link")}</button></div>`
+        : `<p class="muted">${L("Tu utilises aussi Clean Work ? Associe ton compte : tu pourras ensuite ouvrir cette progression avec ta connexion Clean Work, sans autre mot de passe.", "Using Clean Work too? Link your account: you will then be able to open this progress with your Clean Work sign-in, with no extra password.")}</p>
+          <div class="row"><button class="btn primary" data-act="link-cw">${L("Associer mon compte Clean Work", "Link my Clean Work account")}</button></div>`}
+      <div id="auth-msg" class="bad"></div></section>`;
+  };
   VIEWS.account = () => {
     const u = J.user();
     if (u) {
@@ -449,6 +462,7 @@
           ${status}
           <div class="row"><button class="btn" data-act="sync-now">${L("Synchroniser maintenant", "Sync now")}</button><button class="btn" data-act="logout">${L("Se déconnecter", "Sign out")}</button></div>
           <p class="muted small">${L("Sur un ordinateur partagé, déconnecte-toi : la progression est alors effacée de ce navigateur (elle reste sur ton compte).", "On a shared computer, sign out: your progress is then removed from this browser (it stays on your account).")}</p></section>
+        ${cleanworkLink(u)}
         <section class="card danger"><h3>${L("Supprimer mon compte", "Delete my account")}</h3><p class="muted">${L("Efface définitivement ton compte et toute ta progression enregistrée en ligne.", "Permanently deletes your account and all progress saved online.")}</p>
           <button class="btn" data-act="delete-account">${L("Supprimer mon compte…", "Delete my account…")}</button></section>`;
     }
@@ -460,6 +474,7 @@
           ${P.google ? `<div id="g-btn" class="g-btn"></div>` : ""}
           ${P.apple ? `<button class="btn auth apple" data-act="login-apple"><span aria-hidden="true"></span> ${L("Continuer avec Apple", "Continue with Apple")}</button>` : ""}
           ${P.microsoft ? `<button class="btn auth ms" data-act="login-ms"><span class="ms-logo" aria-hidden="true"><i></i><i></i><i></i><i></i></span> ${L("Continuer avec Microsoft", "Continue with Microsoft")}</button>` : ""}
+          ${P.cleanwork ? `<button class="btn auth cw" data-act="login-cw">${L("Continuer avec Clean Work", "Continue with Clean Work")}</button>` : ""}
         </div>` : `<p class="bad">${L("La connexion n’est pas encore activée sur ce site.", "Sign-in is not enabled on this site yet.")}</p>`}
         <div id="auth-msg" class="bad"></div>
         <p class="muted small">${L("Ce que tu as déjà fait ici sans compte sera ajouté à ton compte. Aucun mot de passe n’est stocké par JLPT Étude.", "What you have already done here without an account will be added to your account. JLPT Étude never stores passwords.")}</p>
@@ -908,6 +923,12 @@
     cont: () => { if (EX && EX.answered) { result(EX.correct ? 2 : 0); advance(); } },
     "login-apple": () => J.signInApple(),
     "login-ms": () => J.signInMicrosoft(),
+    "login-cw": () => J.signInCleanWork("login"),
+    "link-cw": () => J.signInCleanWork("link"),
+    "unlink-cw": async () => {
+      if (!confirm(L("Retirer l’association ? Ta connexion Clean Work n’ouvrira plus cette progression.", "Remove the link? Your Clean Work sign-in will no longer open this progress."))) return;
+      try { await J.unlinkAccount("cleanwork"); render(); } catch (e) { alert(e.message); }
+    },
     logout: () => { if (!confirm(L("Se déconnecter ? La progression sera retirée de ce navigateur (elle reste sur ton compte).", "Sign out? Your progress will be removed from this browser (it stays on your account)."))) return; J.logout(); R = null; J.go("onboarding"); },
     relogin: () => { J.dropSession(); J.go("account"); },
     "sync-now": () => { J.save(true); setTimeout(render, 1500); },
@@ -1022,7 +1043,7 @@
 
   /* Démarrage */
   J.onAuth(
-    () => { R = null; J.go(J.S.onboarded ? "home" : "onboarding"); },
+    (what) => { R = null; J.go(what === "linked" ? "account" : J.S.onboarded ? "home" : "onboarding"); },
     (e) => {
       const el = document.getElementById("auth-msg");
       if (el) el.textContent = e.message; else alert(e.message);
@@ -1032,6 +1053,11 @@
     await J.load();
     if (OLD_HOST && !J.user() && !J.S.onboarded && !location.hash) { location.replace(NEW_ORIGIN + "/"); return; }
     if (J.S.lesson && J.S.lesson.date !== J.today()) J.S.lesson = null;
+    // Lien venant de Clean Work (…/#cleanwork) : on lance la connexion tout de suite
+    if (location.hash === "#cleanwork") {
+      history.replaceState(null, "", location.pathname);
+      if (!J.user() && CW_ON()) { J.signInCleanWork("login"); return; }
+    }
     render();
     await J.handleRedirect();
   })();

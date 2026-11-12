@@ -302,6 +302,17 @@
     J.S = J.defaultState();
     J.refreshItems();
   };
+  // Associe une autre connexion (par ex. Clean Work) au compte ouvert, ou la retire
+  J.linkAccount = async function (provider, idToken, nonce) {
+    const r = await Cloud.call("auth/link", { method: "POST", body: JSON.stringify({ provider, idToken, nonce }) });
+    if (r.status !== 200) throw new Error((r.body && r.body.error) || "HTTP " + r.status);
+    sessSet({ ...sessGet(), user: r.body });
+  };
+  J.unlinkAccount = async function (provider) {
+    const r = await Cloud.call("auth/link", { method: "DELETE", body: JSON.stringify({ provider }) });
+    if (r.status !== 200) throw new Error((r.body && r.body.error) || "HTTP " + r.status);
+    sessSet({ ...sessGet(), user: r.body });
+  };
   J.dropSession = function () { sessSet(null); J.store.mode = "local"; J.store.expired = false; J.store.error = null; J.store.user = null; };
   J.deleteAccount = async function () {
     const r = await Cloud.call("me", { method: "DELETE" });

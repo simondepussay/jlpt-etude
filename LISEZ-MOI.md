@@ -76,7 +76,7 @@ L’appli iPhone utilisera exactement ces routes (Sign in with Apple natif → `
 **Azure** (abonnement Azure for Students, groupe `rg-jlpt-etude`, région East Asia) :
 - Static Web App `jlpt-etude` (offre gratuite) : site + API
 - Compte de stockage `jlptetude6e6657` : conteneur privé `jlpt`, un dossier par utilisateur (`users/<id>/profile.json`, `users/<id>/progress-N1.json`)
-- Paramètres de l’application : `STORAGE_CONNECTION`, `SESSION_SECRET`, `GOOGLE_CLIENT_ID`, `APPLE_CLIENT_IDS`, `MICROSOFT_CLIENT_ID`
+- Paramètres de l’application : `STORAGE_CONNECTION`, `SESSION_SECRET`, `GOOGLE_CLIENT_ID`, `APPLE_CLIENT_IDS`, `MICROSOFT_CLIENT_ID`, `CLEANWORK_CLIENT_ID`, `CLEANWORK_TENANT`, `CLEANWORK_TENANT_ID`
 
 ## Activer la connexion
 
@@ -87,6 +87,12 @@ Pour chaque fournisseur, il faut un identifiant client, à renseigner à **deux 
 2. *Identifiants* → *Créer des identifiants* → *ID client OAuth* → type **Application Web**
 3. *Origines JavaScript autorisées* : `https://jlpt.simondepussay.com` et `https://purple-flower-00ac22900.5.azurestaticapps.net` (ancienne adresse) (+ `http://localhost:8765` pour les tests)
 4. Copier l’ID client (`xxxx.apps.googleusercontent.com`)
+
+**Clean Work** (même compte que cleanwork.simondepussay.com)
+1. Les comptes de Clean Work sont dans un annuaire Microsoft Entra External ID. Le script `infra/partner-jlpt.mjs` du dépôt de Clean Work y crée l’inscription « JLPT Étude Web » et affiche son identifiant.
+2. Mettre cet identifiant dans `cleanwork.clientId` (`web/app/config.js`) et dans `CLEANWORK_CLIENT_ID` côté API, avec `CLEANWORK_TENANT=shukatsupilot` et `CLEANWORK_TENANT_ID`.
+3. Une personne déjà connectée à Clean Work dans son navigateur arrive connectée ici sans rien retaper ; le lien `https://jlpt.simondepussay.com/#cleanwork` lance la connexion tout seul.
+4. *Mon compte → Associer mon compte Clean Work* relie cette connexion à un compte existant (Google…) : les deux ouvrent alors la même progression (`POST /api/auth/link`).
 
 **Apple** (compte Apple Developer)
 1. *Identifiers* → **Services IDs** → nouveau, par ex. `com.simondepussay.jlpt.web`, activer *Sign in with Apple*
