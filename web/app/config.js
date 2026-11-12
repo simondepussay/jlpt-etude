@@ -10,5 +10,5 @@ window.JLPT_CONFIG = {
   googleClientId: "214657172277-4qfioc2rldsldl2tt35vsqaoaf787a0m.apps.googleusercontent.com",
   appleClientId: "",
   microsoftClientId: "",
-  cleanwork: { clientId: "", tenant: "shukatsupilot", tenantId: "8b36fa73-5876-491f-a486-65bdbf79c252" }
+  cleanwork: { clientId: "1b8ac33f-bc78-41db-bc12-9e5cf869a387", tenant: "shukatsupilot", tenantId: "8b36fa73-5876-491f-a486-65bdbf79c252" }
 };
