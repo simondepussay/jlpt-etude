@@ -119,3 +119,65 @@ test("A10 · connexion : fournisseur inconnu 400, fournisseur non configuré 503
   assert.equal((await call("login", req("POST", { body: { provider: "facebook", idToken: "a.b.c" } }))).status, 400);
   assert.equal((await call("login", req("POST", { body: { provider: "google", idToken: "a.b.c" } }))).status, 503);
 });
+
+/* Connexions associées : faux fournisseur d’identité (le vrai contrôle des jetons est testé dans auth.test.js) */
+const auth = require("../src/lib/auth");
+const realVerify = auth.verifyIdToken;
+const fakeIdentity = () => { auth.verifyIdToken = async (provider, idToken) => { const [sub, email] = idToken.split("|"); return { provider, sub, email, name: null }; }; };
+const login = async (provider, sub) => (await call("login", req("POST", { body: { provider, idToken: `${sub}|${sub}@example.com` } }))).jsonBody;
+const linkCw = (token, sub) => call("link", req("POST", { headers: { "x-jlpt-session": token }, body: { provider: "cleanwork", idToken: `${sub}|${sub}@example.com` } }));
+
+test("A11 · associer Clean Work à un compte Google : les deux connexions ouvrent le même compte", async () => {
+  fakeIdentity();
+  const g = await login("google", "a11");
+  await call("progress", req("PUT", { params: { level: "N1" }, headers: { "x-jlpt-session": g.token, "x-create": "1" }, body: progression() }));
+  const r = await linkCw(g.token, "a11cw");
+  assert.equal(r.status, 200);
+  assert.equal(r.jsonBody.links.length, 1);
+  assert.equal(r.jsonBody.links[0].provider, "cleanwork");
+  const cw = await login("cleanwork", "a11cw");
+  assert.equal(cw.user.id, g.user.id);
+  assert.equal(cw.user.provider, "google");
+  assert.equal((await call("progress", req("GET", { params: { level: "N1" }, headers: { "x-jlpt-session": cw.token } }))).status, 200);
+  auth.verifyIdToken = realVerify;
+});
+
+test("A12 · association refusée : sans session, connexion déjà prise, ou qui a déjà sa propre progression", async () => {
+  fakeIdentity();
+  assert.equal((await call("link", req("POST", { body: { provider: "cleanwork", idToken: "x|x" } }))).status, 401);
+  const a = await login("google", "a12a"), b = await login("google", "a12b");
+  assert.equal((await linkCw(a.token, "a12cw")).status, 200);
+  assert.equal((await linkCw(b.token, "a12cw")).status, 409);
+  // une connexion Clean Work utilisée seule, avec de la progression, ne peut pas être absorbée
+  const solo = await login("cleanwork", "a12solo");
+  await call("progress", req("PUT", { params: { level: "N1" }, headers: { "x-jlpt-session": solo.token, "x-create": "1" }, body: progression() }));
+  assert.equal((await linkCw(b.token, "a12solo")).status, 409);
+  // … mais sans progression, oui : son compte vide disparaît
+  await login("cleanwork", "a12vide");
+  assert.equal((await linkCw(b.token, "a12vide")).status, 200);
+  assert.equal((await login("cleanwork", "a12vide")).user.id, b.user.id);
+  auth.verifyIdToken = realVerify;
+});
+
+test("A13 · retirer l’association, ou supprimer le compte, rend sa connexion Clean Work indépendante", async () => {
+  fakeIdentity();
+  const g = await login("google", "a13");
+  await linkCw(g.token, "a13cw");
+  const d = await call("link", req("DELETE", { headers: { "x-jlpt-session": g.token }, body: { provider: "cleanwork" } }));
+  assert.equal(d.status, 200);
+  assert.equal(d.jsonBody.links.length, 0);
+  assert.notEqual((await login("cleanwork", "a13cw")).user.id, g.user.id);
+  const g2 = await login("google", "a13b");
+  await linkCw(g2.token, "a13cw2");
+  await call("me", req("DELETE", { headers: { "x-jlpt-session": g2.token } }));
+  assert.notEqual((await login("cleanwork", "a13cw2")).user.id, g2.user.id);
+  auth.verifyIdToken = realVerify;
+});
+
+test("A14 · Clean Work : non configuré → 503 ; jeton d’un autre émetteur refusé", async () => {
+  delete process.env.CLEANWORK_CLIENT_ID;
+  assert.equal((await call("login", req("POST", { body: { provider: "cleanwork", idToken: "a.b.c" } }))).status, 503);
+  process.env.CLEANWORK_CLIENT_ID = "client"; process.env.CLEANWORK_TENANT = "exemple"; process.env.CLEANWORK_TENANT_ID = "x";
+  assert.equal((await call("login", req("POST", { body: { provider: "cleanwork", idToken: "a.b.c" } }))).status, 503);
+  delete process.env.CLEANWORK_CLIENT_ID;
+});

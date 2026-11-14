@@ -1,4 +1,4 @@
-// Vérification des jetons d'identité (Google, Apple, Microsoft) et sessions JLPT Étude.
+// Vérification des jetons d'identité (Google, Apple, Microsoft, Clean Work) et sessions JLPT Étude.
 // Aucun mot de passe n'est stocké : on vérifie la signature du jeton du fournisseur,
 // puis on émet notre propre jeton de session (HS256) valable 60 jours.
 const crypto = require("node:crypto");
@@ -22,8 +22,23 @@ const PROVIDERS = {
     // multi-locataire : l'émetteur contient l'identifiant du locataire (vérifié plus bas)
     issuer: null,
     audience: () => list(process.env.MICROSOFT_CLIENT_ID)
+  },
+  // Comptes Clean Work : annuaire Microsoft Entra External ID (cleanwork.simondepussay.com).
+  // CLEANWORK_TENANT = sous-domaine de l'annuaire, CLEANWORK_TENANT_ID = son identifiant,
+  // CLEANWORK_CLIENT_ID = l'inscription « JLPT Étude Web » dans cet annuaire.
+  cleanwork: {
+    jwks: () => cleanworkKeys(),
+    issuer: () => [`https://${process.env.CLEANWORK_TENANT_ID}.ciamlogin.com/${process.env.CLEANWORK_TENANT_ID}/v2.0`],
+    audience: () => (process.env.CLEANWORK_TENANT && process.env.CLEANWORK_TENANT_ID ? list(process.env.CLEANWORK_CLIENT_ID) : [])
   }
 };
+
+let cwKeys = null;
+function cleanworkKeys() {
+  const { CLEANWORK_TENANT: sub, CLEANWORK_TENANT_ID: tid } = process.env;
+  if (!/^[a-z0-9-]+$/.test(sub || "") || !/^[0-9a-f-]{36}$/.test(tid || "")) throw new AuthError("Connexion cleanwork mal configurée", 503);
+  return cwKeys || (cwKeys = createRemoteJWKSet(new URL(`https://${sub}.ciamlogin.com/${tid}/discovery/v2.0/keys`)));
+}
 
 class AuthError extends Error {
   constructor(msg, status = 401) { super(msg); this.status = status; }
@@ -37,10 +52,11 @@ async function verifyIdToken(provider, idToken, nonce) {
   if (typeof idToken !== "string" || idToken.length > 8000) throw new AuthError("Jeton invalide", 400);
 
   const opts = { audience, clockTolerance: 60 };
-  if (p.issuer) opts.issuer = p.issuer;
+  if (p.issuer) opts.issuer = typeof p.issuer === "function" ? p.issuer() : p.issuer;
+  const keys = provider === "cleanwork" ? p.jwks() : p.jwks;
   let payload;
   try {
-    ({ payload } = await jwtVerify(idToken, p.jwks, opts));
+    ({ payload } = await jwtVerify(idToken, keys, opts));
   } catch (e) {
     throw new AuthError("Jeton refusé : " + e.code);
   }
@@ -56,7 +72,7 @@ async function verifyIdToken(provider, idToken, nonce) {
   return {
     provider,
     sub: String(payload.sub),
-    email: payload.email || payload.preferred_username || null,
+    email: payload.email || payload.preferred_username || (Array.isArray(payload.emails) ? payload.emails[0] : null) || null,
     name: payload.name || null
   };
 }
