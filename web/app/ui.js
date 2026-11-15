@@ -340,7 +340,7 @@
       <span>${prev ? `<button class="btn sm" data-act="open-item" data-m="${m}" data-id="${esc(prev.id)}">←</button>` : ""}
       ${next ? `<button class="btn sm" data-act="open-item" data-m="${m}" data-id="${esc(next.id)}">→</button>` : ""}</span></div>
       ${stat}${body}
-      ${m === "g" ? `<div class="row"><button class="btn primary" data-act="drill" data-m="g" data-id="${id}">${L("M’entraîner sur ce point (5 questions)", "Practice this point (5 questions)")}</button></div>` : ""}`;
+      ${m === "g" ? `<div class="row"><button class="btn primary" data-act="drill" data-m="g" data-id="${id}">${J.gramMeanOnly(id) ? L("M’entraîner sur le sens", "Practice the meaning") : L("M’entraîner sur ce point (5 questions)", "Practice this point (5 questions)")}</button></div>` : ""}`;
   };
 
   /* Choix d’entraînement */
@@ -873,7 +873,7 @@
       startPractice(d.m, src, n, false);
     },
     drill: (d) => {
-      R = { type: "practice", kind: "drill", ref: d.id, queue: ["g-qcm", "g-rev", "g-cloze", "g-ord", "g-qcm"].map((k) => ({ s: "rev", m: "g", id: d.id, free: true, kind: k })), pos: 0, fix: {}, ok: 0, ko: 0, errors: [], started: Date.now(), noFix: true };
+      R = { type: "practice", kind: "drill", ref: d.id, queue: (J.gramMeanOnly(d.id) ? ["g-mean"] : ["g-qcm", "g-rev", "g-cloze", "g-ord", "g-qcm"]).map((k) => ({ s: "rev", m: "g", id: d.id, free: true, kind: k })), pos: 0, fix: {}, ok: 0, ko: 0, errors: [], started: Date.now(), noFix: true };
       EX = null; J.go("run");
     },
     filter: (d) => J.go("mod", { m: d.m, f: d.f, q: (document.getElementById("search") || {}).value || "" }),

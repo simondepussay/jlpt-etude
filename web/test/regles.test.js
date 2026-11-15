@@ -362,6 +362,7 @@ test("R36 · lecture : 4 choix distincts, la bonne réponse incluse, jamais une 
 test("R37 · QCM de grammaire : 4 choix distincts dont la bonne réponse", () => {
   const J = load();
   for (const g of J.items.g) {
+    learned(J, "g", g.id, { iv: 30 });
     const ex = J.makeEx("g", g.id, "rev", "g-qcm");
     assert.equal(ex.options.length, 4, g.p);
     assert.equal(new Set(ex.options).size, 4, g.p);
@@ -464,4 +465,26 @@ test("R44 · fusion de deux appareils : lectures et examens blancs sont réunis"
   // une sauvegarde d’avant la lecture (sans ces champs) se fusionne sans erreur
   delete a.reading; delete a.exams;
   assert.equal(J.merge(a, b).exams.length, 2);
+});
+
+test("R45 · grammaire : seulement le sens (japonais → français) tant que le point n’est pas maîtrisé", () => {
+  const J = load();
+  const [a, b] = J.items.g;
+  learned(J, "g", a.id, { iv: 10 });   // acquis, pas encore maîtrisé
+  for (const stage of ["rev", "check", "test"]) for (const kind of [undefined, "g-qcm", "g-ord", "g-cloze"]) {
+    for (const g of [a, b]) {
+      const ex = J.makeEx("g", g.id, stage, kind);
+      assert.equal(ex.kind, "g-mean", `${g.p} ${stage} ${kind}`);
+      assert.equal(ex.options.length, 4);
+      assert.ok(ex.options.includes(J.gs(g, "s")));
+      assert.ok(ex.prompt.includes(g.p.replace(/&/g, "&amp;")));
+    }
+  }
+  learned(J, "g", a.id, { iv: 21 });   // maîtrisé : les autres questions reviennent
+  assert.equal(J.makeEx("g", a.id, "rev", "g-qcm").kind, "g-qcm");
+  const kinds = new Set(Array.from({ length: 60 }, () => J.makeEx("g", a.id, "rev").kind));
+  assert.ok(kinds.size > 1);
+  // l’examen blanc reste une mesure sur tout le programme
+  const e = J.buildExam();
+  assert.ok(e.screens.filter((s) => s.part === "bunpo").every((s) => s.ex.kind === "g-qcm"));
 });

@@ -76,7 +76,7 @@
   const LABELS = {
     "v-read": ["読み方", "Lecture", "Reading"], "v-mean": ["意味", "Sens", "Meaning"], "v-word": ["語彙", "Quel mot ?", "Which word?"], "v-flash": ["カード", "Rappel", "Recall"],
     "k-mean": ["意味", "Sens du kanji", "Kanji meaning"], "k-kanji": ["漢字", "Quel kanji ?", "Which kanji?"], "k-word": ["漢字読み", "Lecture du mot", "Word reading"], "k-flash": ["カード", "Rappel", "Recall"],
-    "g-qcm": ["文法形式の判断", "Grammaire", "Grammar"], "g-cloze": ["穴埋め", "Phrase à trous", "Fill the gap"], "g-rev": ["意味 → 形", "Quelle forme ?", "Which form?"], "g-ord": ["文の組み立て", "Phrase à ordonner ★", "Sentence order ★"], "g-flash": ["カード", "Rappel", "Recall"]
+    "g-mean": ["意味", "Sens", "Meaning"], "g-qcm": ["文法形式の判断", "Grammaire", "Grammar"], "g-cloze": ["穴埋め", "Phrase à trous", "Fill the gap"], "g-rev": ["意味 → 形", "Quelle forme ?", "Which form?"], "g-ord": ["文の組み立て", "Phrase à ordonner ★", "Sentence order ★"], "g-flash": ["カード", "Rappel", "Recall"]
   };
   J.kindLabel = (k) => `${LABELS[k][0]} · ${L(LABELS[k][1], LABELS[k][2])}`;
 
@@ -89,9 +89,14 @@
     return true;
   }
 
-  J.makeEx = function (m, id, stage = "rev", kind) {
+  // Grammaire : tant qu’un point n’est pas maîtrisé, une seule question, son sens (japonais → français).
+  // Les autres questions (QCM, phrase à trous, forme, phrase à ordonner, rappel) viennent une fois le point maîtrisé.
+  J.gramMeanOnly = (id) => J.levelOf("g", id) < 3;
+
+  J.makeEx = function (m, id, stage = "rev", kind, opts = {}) {
     if (!J.byId[m][id]) throw new Error("Élément introuvable : " + id);
     let k = kind;
+    if (m === "g" && !opts.exam && J.gramMeanOnly(id)) k = "g-mean";
     if (!k || !BUILD[k] || !usable(m, id, k)) {
       const list = KINDS[m][stage].filter((kk) => usable(m, id, kk));
       k = pick(list.length ? list : KINDS[m].rev.filter((kk) => usable(m, id, kk)));
@@ -147,6 +152,12 @@
       back: J.kanjiBack(k)
     }),
     /* Grammaire */
+    "g-mean": (g) => {
+      const same = otherItems("g", g.id, 3, (x) => x.cat === g.cat);
+      const opts = uniqueOptions(J.gs(g, "s"), same.map((x) => J.gs(x, "s")).concat(otherItems("g", g.id, 8).map((x) => J.gs(x, "s"))));
+      return { mode: "choice", prompt: `<p class="q-help">${L("Que signifie cette grammaire ?", "What does this grammar mean?")}</p><div class="big-jp jp" lang="ja">${esc(g.p)}</div>`,
+        options: opts, answer: J.gs(g, "s"), back: J.gramBack(g, exLine(g, 0)), say: strip(g.ex[0][0]) };
+    },
     "g-qcm": (g) => {
       const [q, c] = pick(g.q);
       const filled = q.includes("＿＿＿") ? q.replace("＿＿＿", c[0]) : "";
@@ -201,7 +212,7 @@
     const bunpo = take(J.items.g, N.bunpo);
     const seenG = new Set(bunpo.map((g) => g.id));
     const narabe = take(J.items.g.filter((g) => g.o && !seenG.has(g.id)), N.narabe);
-    const ex = (part, m, x, kind) => ({ part, type: "ex", ex: J.makeEx(m, x.id, "test", kind) });
+    const ex = (part, m, x, kind) => ({ part, type: "ex", ex: J.makeEx(m, x.id, "test", kind, { exam: true }) });
     const screens = [
       ...yomi.map((v) => ex("yomi", "v", v, "v-read")),
       ...goi.map((v, i) => ex("goi", "v", v, i % 2 ? "v-word" : "v-mean")),
