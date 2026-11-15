@@ -6,7 +6,8 @@ Beaucoup de kanji N1 n'apparaissent dans aucun mot de la liste N1 : on leur donn
 des mots des niveaux inférieurs pour poser la question « Comment se lit ce mot ? ».
 
 Usage : python3 outils/mots_kanji.py chemin/vers/fichier.xlsx
-Nécessite openpyxl. Produit web/data/n1-kanji-mots.js : { kanji: [[mot, lecture], …] }
+Nécessite openpyxl. Produit web/data/n1-kanji-mots.js : { kanji: [[mot, lecture, français, anglais], …] }
+Les sens viennent de outils/sens-mots-kanji.tsv (un mot sans sens, ou marqué « — », est écarté).
 """
 import json, re, sys, pathlib
 import openpyxl
@@ -23,7 +24,17 @@ def charge(path):
     return json.loads(src[src.index("=[") + 1:src.rindex("]") + 1])
 
 
+def sens():
+    out = {}
+    for l in (ROOT / "outils" / "sens-mots-kanji.tsv").read_text(encoding="utf-8").splitlines():
+        if l.strip() and not l.startswith("#"):
+            w, lec, fr, en = l.split("\t")
+            out[(w, lec)] = (fr, en)
+    return out
+
+
 def main(xlsx):
+    traductions = sens()
     kanji = [k["k"] for k in charge("n1-kanji.js")]
     n1 = charge("n1-vocab.js")
     n1_mots = {}
@@ -39,7 +50,9 @@ def main(xlsx):
             if not r or not r[0] or not r[1]:
                 continue
             w, lec = str(r[0]).strip(), str(r[1]).strip()
-            if w == "Kanji" or w.startswith("=") or w == lec or not KANA.match(lec):
+            if w == "Kanji" or w.startswith("=") or "/" in w or w == lec or not KANA.match(lec):
+                continue
+            if traductions.get((w, lec), ("—",))[0] == "—":
                 continue
             mots.append((w, lec))
 
@@ -54,7 +67,7 @@ def main(xlsx):
             if len(choix) >= PAR_KANJI:
                 break
         if choix:
-            sortie[k] = [list(x) for x in choix]
+            sortie[k] = [[w, lec, *traductions[(w, lec)]] for w, lec in choix]
             vus.update(choix)
 
     (DATA / "n1-kanji-mots.js").write_text(

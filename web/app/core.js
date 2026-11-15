@@ -49,7 +49,9 @@
   // d’abord les mots N1 ({w, r, id}), puis des mots N2–N5 sans fiche ({w, r}).
   const KMOTS = window.DATA["N1-kanji-mots"] || {};
   J.kanjiReadWords = (ch) => (J.kanjiWords[ch] || []).map((id) => J.byId.v[id]).filter((v) => v && v.w !== v.r)
-    .concat((KMOTS[ch] || []).map(([w, r]) => ({ w, r })));
+    .concat((KMOTS[ch] || []).map(([w, r, fr, en]) => ({ w, r, fr, en })));
+  // Sens court d’un mot d’exemple : mot de la liste N1, ou mot N2–N5 avec son sens en français et en anglais
+  J.wordMean = (v) => (v.id ? J.shortMeaning(J.mean("v", v)) : (J.lang() === "en" ? v.en : v.fr) || "");
 
   // Textes de lecture (読解)
   J.texts = D[J.LEVEL + "-lecture"] || [];

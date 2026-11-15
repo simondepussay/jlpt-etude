@@ -59,7 +59,7 @@
   J.kanjiBack = (k) => {
     const words = J.kanjiReadWords(k.k).slice(0, 4);
     return `<div class="ans-card"><div class="ans-kanji jp" lang="ja">${esc(k.k)}</div><div class="ans-read">${J.kanjiReadings(k)}</div><div class="ans-mean">${esc(M("k", k))}</div>
-      ${words.length ? `<div class="mini-words">${words.map((w) => `<span class="jp" lang="ja">${esc(w.w)}<small>${esc(w.r)}</small></span>`).join("")}</div>` : ""}</div>`;
+      ${words.length ? `<div class="mini-words">${words.map((w) => `<span><span class="jp" lang="ja">${esc(w.w)}</span><small class="jp" lang="ja">${esc(w.r)}</small><small class="mw-mean">${esc(J.wordMean(w))}</small></span>`).join("")}</div>` : ""}</div>`;
   };
   J.gramBack = (g, extra = "") =>
     `<div class="ans-card left"><div class="ans-pattern jp" lang="ja">${esc(g.p)}</div><div class="ans-mean">${esc(J.gs(g, "s"))}</div>
@@ -142,7 +142,7 @@
       const v = pick(J.kanjiReadWords(k.k));
       const shown = esc(v.w).replace(esc(k.k), `<u>${esc(k.k)}</u>`);
       const wordBack = v.id ? J.vocabBack(v)
-        : `<div class="ans-card"><div class="ans-word jp" lang="ja">${esc(v.w)}</div><div class="ans-read jp" lang="ja">${esc(v.r)}</div>
+        : `<div class="ans-card"><div class="ans-word jp" lang="ja">${esc(v.w)}</div><div class="ans-read jp" lang="ja">${esc(v.r)}</div>${v.fr ? `<div class="ans-mean">${esc(J.wordMean(v))}</div>` : ""}
            <button class="icon-btn" data-act="say" data-say="${esc(v.r)}" title="${L("Écouter", "Listen")}">🔊</button></div>`;
       return { mode: "choice", prompt: `<p class="q-help">問題1 漢字読み — ${L("Comment se lit le mot ?", "How is this word read?")}</p><div class="big-jp jp" lang="ja">${shown}</div>`,
         options: readingOptions(v.w, v.r), answer: v.r, back: wordBack + J.kanjiBack(k), say: v.r, jpOpts: true };
@@ -263,7 +263,7 @@
         <div class="learn-read">${J.kanjiReadings(x)}</div>
         <div class="learn-mean">${esc(M("k", x))}</div>
         ${words.length ? `<div class="learn-sub"><h4>${L("Mots N1 avec ce kanji", "N1 words with this kanji")}</h4>${words.map((w) => `<div class="wline"><span class="jp" lang="ja">${esc(w.w)}</span><span class="jp muted" lang="ja">${esc(w.r)}</span><span>${esc(SM("v", w))}</span><button class="icon-btn sm" data-act="say" data-say="${esc(w.r)}">🔊</button></div>`).join("")}</div>` : ""}
-        ${autres.length ? `<div class="learn-sub"><h4>${L("Mots courants avec ce kanji", "Common words with this kanji")}</h4>${autres.map((w) => `<div class="wline"><span class="jp" lang="ja">${esc(w.w)}</span><span class="jp muted" lang="ja">${esc(w.r)}</span><span></span><button class="icon-btn sm" data-act="say" data-say="${esc(w.r)}">🔊</button></div>`).join("")}</div>` : ""}
+        ${autres.length ? `<div class="learn-sub"><h4>${L("Mots courants avec ce kanji", "Common words with this kanji")}</h4>${autres.map((w) => `<div class="wline"><span class="jp" lang="ja">${esc(w.w)}</span><span class="jp muted" lang="ja">${esc(w.r)}</span><span>${esc(J.wordMean(w))}</span><button class="icon-btn sm" data-act="say" data-say="${esc(w.r)}">🔊</button></div>`).join("")}</div>` : ""}
       </div>`;
     }
     return J.grammarLesson(x, true);

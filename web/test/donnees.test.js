@@ -106,3 +106,13 @@ test("D11 · chaque texte de lecture : questions à 4 choix distincts, explicati
     for (const w of t.mots) assert.ok(w.length === 4 && w.every(Boolean), `${t.id} : ${w[0]}`);
   }
 });
+
+test("D12 · chaque mot d’exemple des kanji a son sens en français et en anglais", () => {
+  const J = load();
+  for (const k of J.items.k) for (const w of J.kanjiReadWords(k.k)) {
+    assert.ok(w.r, w.w);
+    J.S.settings.lang = "fr"; assert.ok(J.wordMean(w), `${k.k} ${w.w} (fr)`);
+    J.S.settings.lang = "en"; assert.ok(J.wordMean(w), `${k.k} ${w.w} (en)`);
+  }
+});
+

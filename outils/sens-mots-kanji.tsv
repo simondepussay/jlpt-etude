@@ -1,0 +1,462 @@
+# Sens des mots d'exemple des kanji (web/data/n1-kanji-mots.js) : mot, lecture, français, anglais.
+# Anglais d'après la liste de vocabulaire N2–N5 d'origine, raccourci ; français traduit.
+お嬢さん	おじょうさん	jeune fille, mademoiselle	young lady
+お風呂	おふろ	bain	bath
+一斉	いっせい	simultané, tous ensemble	simultaneous, all at once
+一旦	いったん	une fois, momentanément	once, for a moment
+一生懸命	いっしょうけんめい	de toutes ses forces	with utmost effort
+一瞬	いっしゅん	un instant	a moment, an instant
+丁寧	ていねい	poli, soigneux	polite, careful
+上旬	じょうじゅん	début du mois (1er–10)	first 10 days of the month
+下旬	げじゅん	fin du mois (21–fin)	last third of the month
+不潔	ふけつ	sale, malpropre	unclean, dirty
+世紀	せいき	siècle	century
+丘	おか	colline	hill
+中旬	ちゅうじゅん	milieu du mois (11–20)	middle third of the month
+企業	きぎょう	entreprise	company, enterprise
+休憩	きゅうけい	pause, repos	rest, break
+休暇	きゅうか	congé, vacances	holiday, day off
+伯母さん	おばさん	tante	aunt
+伯母さん/叔母さん	おばさん	tante	aunt
+伯父/叔父	おじいさん	—	—
+伯父さん	おじさん	oncle	uncle
+但し	ただし	toutefois, à condition que	but, however, provided that
+体系	たいけい	système	system, organization
+余裕	よゆう	marge, aisance, temps devant soi	margin, room, composure
+価値	かち	valeur	value, worth
+修繕	しゅうぜん	réparation	repair, mending
+俳優	はいゆう	acteur, actrice	actor, actress
+俳句	はいく	haïku	haiku
+倉庫	そうこ	entrepôt	warehouse
+健康	けんこう	santé	health
+傑作	けっさく	chef-d'œuvre	masterpiece
+傘	かさ	parapluie	umbrella
+僕	ぼく	je, moi (masculin)	I (used by males)
+儀式	ぎしき	cérémonie, rite	ceremony, rite
+優秀	ゆうしゅう	excellent	excellent, outstanding
+先輩	せんぱい	aîné (au travail, à l'école)	senior
+克服	こくふく	surmonter, vaincre	overcoming, conquest
+兵隊	へいたい	soldat	soldier
+冒険	ぼうけん	aventure	adventure, venture
+冗談	じょうだん	plaisanterie	joke
+冠	かんむり	couronne	crown
+冷房	れいぼう	climatisation	air conditioning
+凸凹	でこぼこ	inégal, cabossé	unevenness, bumpy
+凹む	へこむ	se cabosser ; être découragé	to be dented; to be discouraged
+刀	かたな	sabre	sword
+分析	ぶんせき	analyse	analysis
+刈る	かる	couper (cheveux), tondre, faucher	to cut (hair), to mow
+初旬	しょじゅん	début du mois	first 10 days of the month
+別荘	べっそう	résidence secondaire, villa	holiday house, villa
+剃刀	かみそり	rasoir	razor
+削る	けずる	tailler, raboter, réduire	to shave off, to cut down
+削除	さくじょ	suppression	deletion
+功績	こうせき	mérite, réalisations	achievements, merit
+劣る	おとる	être inférieur à	to be inferior to
+助教授	じょきょうじゅ	maître de conférences	assistant professor
+勘	かん	intuition, flair	intuition, sixth sense
+勘定	かんじょう	compte, addition	calculation, the bill
+勘違い	かんちがい	méprise, malentendu	misunderstanding
+半径	はんけい	rayon (d'un cercle)	radius
+卑怯	ひきょう	lâche, déloyal	cowardly, unfair
+博士	はかせ	docteur (doctorat)	doctor (PhD)
+博物館	はくぶつかん	musée	museum
+却って	かえって	au contraire, plutôt	on the contrary, rather
+卸す	おろす	vendre en gros	to sell wholesale
+厄介	やっかい	embarrassant, pénible	troublesome, burden
+原稿	げんこう	manuscrit	manuscript
+又	また	encore, de nouveau	again
+又は	または	ou, ou bien	or
+収穫	しゅうかく	récolte	harvest
+叔母さん	おばさん	tante	aunt
+叔父さん	おじさん	oncle	uncle
+只	ただ	gratuit ; seulement	free of charge; only
+同僚	どうりょう	collègue	colleague
+吐き気	はきけ	nausée	nausea
+吐く	はく	vomir ; expirer, cracher	to vomit; to breathe out
+哀れ	あわれ	pitoyable, triste	pitiful, sorrow
+哲学	てつがく	philosophie	philosophy
+唇	くちびる	lèvres	lips
+唯	ただ	seulement, simplement	only, merely
+唯	たった	—	—
+唯一	ゆいいつ	unique, le seul	only, sole
+噴水	ふんすい	fontaine, jet d'eau	fountain
+噴火	ふんか	éruption	eruption
+地盤	じばん	sol, terrain ; base	ground; foundation
+垂直	すいちょく	vertical	vertical
+垣根	かきね	haie, clôture	hedge, fence
+執筆	しっぴつ	rédaction, écriture	writing
+基地	きち	base (militaire, etc.)	base
+基準	きじゅん	critère, norme	standard, criterion
+基盤	きばん	fondement, base	foundation, basis
+基礎	きそ	base, fondations	foundation, basics
+堀	ほり	douves, canal	moat, canal
+堅/硬/固い	かたい	dur	hard
+堅い	かたい	solide, sérieux	firm, solid, steady
+塀	へい	mur d'enceinte, clôture	wall, fence
+塊	かたまり	bloc, morceau	lump, mass
+墓	はか	tombe	grave
+墨	すみ	encre de Chine	ink
+壁	かべ	mur	wall
+大抵	たいてい	généralement	usually, generally
+天皇	てんのう	empereur du Japon	Emperor of Japan
+太鼓	たいこ	tambour	drum
+奇妙	きみょう	étrange	strange, curious
+奨学金	しょうがくきん	bourse d'études	scholarship
+奪う	うばう	arracher, voler	to snatch away
+女房	にょうぼう	épouse (familier)	wife
+好き嫌い	すききらい	goûts, préférences	likes and dislikes
+妙	みょう	étrange, bizarre	strange, unusual
+妨げる	さまたげる	gêner, empêcher	to disturb, to prevent
+姿	すがた	silhouette, apparence	figure, appearance
+姿勢	しせい	posture, attitude	posture, attitude
+娯楽	ごらく	divertissement	entertainment
+嫁	よめ	mariée, belle-fille	bride, daughter-in-law
+嫌う	きらう	détester	to dislike, to hate
+嫌がる	いやがる	ne pas vouloir, rechigner	to dislike, to be unwilling
+嬉しい	うれしい	content, heureux	happy, glad
+季節	きせつ	saison	season
+宇宙	うちゅう	univers, espace	universe, space
+宗教	しゅうきょう	religion	religion
+定価	ていか	prix fixe, prix catalogue	list price
+宴会	えんかい	banquet, fête	banquet, party
+寂しい	さびしい	seul, triste	lonely
+寧ろ	むしろ	plutôt	rather, instead
+寮	りょう	internat, résidence	dormitory
+寸法	すんぽう	dimensions, mesures	measurements, size
+専攻	せんこう	spécialité (études)	major (subject)
+将棋	しょうぎ	shōgi (échecs japonais)	shogi (Japanese chess)
+尋ねる	たずねる	demander, s'enquérir	to ask
+就く	つく	prendre (un poste)	to take (a post)
+就任	しゅうにん	entrée en fonction	taking office
+就職	しゅうしょく	trouver un emploi	finding employment
+履く	はく	mettre (chaussures, pantalon)	to put on (shoes, trousers)
+岬	みさき	cap	cape
+峠	とうげ	col (de montagne) ; point critique	mountain pass; the worst part
+嵐	あらし	tempête	storm
+巡る	めぐる	faire le tour de	to go around
+巡査	じゅんさ	agent de police	police officer
+巣	す	nid	nest
+幕	まく	rideau ; acte	curtain; act (of a play)
+幼稚	ようち	puéril	childish
+幼稚園	ようちえん	école maternelle	kindergarten
+座敷	ざしき	pièce à tatamis	tatami room
+廊下	ろうか	couloir	corridor
+引っ繰り返す	ひっくりかえす	renverser, retourner	to overturn, to turn over
+引っ繰り返る	ひっくりかえる	se renverser	to be overturned
+彫る	ほる	sculpter, graver	to carve, to engrave
+彫刻	ちょうこく	sculpture	sculpture
+影	かげ	ombre ; reflet	shadow; reflection
+影響	えいきょう	influence	influence, effect
+往復	おうふく	aller-retour	round trip
+後輩	こうはい	cadet (au travail, à l'école)	junior
+御無沙汰	ごぶさた	long silence (sans nouvelles)	not keeping in touch
+御辞儀	おじぎ	salut, révérence	bow
+循環	じゅんかん	circulation, cycle	circulation, cycle
+微妙	びみょう	subtil, délicat	subtle, delicate
+徹夜	てつや	nuit blanche	staying up all night
+徹底	てってい	minutie, à fond	thoroughness
+必需品	ひつじゅひん	produit de première nécessité	necessities
+応援	おうえん	soutien, encouragement	support, cheering
+急激	きゅうげき	brusque, soudain	sudden, sharp
+怪しい	あやしい	suspect, douteux	suspicious, doubtful
+怪我	けが	blessure	injury
+恨み	うらみ	rancune	resentment
+恨む	うらむ	en vouloir à	to resent
+恩	おん	bienfait, dette de reconnaissance	debt of gratitude
+恩恵	おんけい	bienfait, avantage	benefit, blessing
+悔しい	くやしい	rageant, vexant	frustrating, vexing
+悔やむ	くやむ	regretter ; déplorer	to regret; to mourn
+悠々	ゆうゆう	tranquillement, largement	calmly, leisurely
+惜しい	おしい	dommage ; précieux	regrettable; precious
+愉快	ゆかい	agréable, amusant	pleasant, fun
+感激	かんげき	vive émotion	deep emotion
+慎重	しんちょう	prudent	careful, prudent
+慰める	なぐさめる	consoler	to comfort, to console
+慶び	よろこび	joie ; félicitations	joy; congratulations
+憧れる	あこがれる	aspirer à, admirer	to long for, to admire
+憲法	けんぽう	constitution	constitution
+懐かしい	なつかしい	qui rappelle de bons souvenirs	nostalgic, dear
+成功	せいこう	réussite	success
+我慢	がまん	patience, endurer	patience, endurance
+戸棚	とだな	placard	cupboard
+扇ぐ	あおぐ	éventer	to fan
+扇子	せんす	éventail pliant	folding fan
+扇風機	せんぷうき	ventilateur	electric fan
+批判	ひはん	critique	criticism
+批評	ひひょう	critique, commentaire	review, critique
+投票	とうひょう	vote	voting
+抵抗	ていこう	résistance	resistance
+抽象	ちゅうしょう	abstraction	abstraction
+拍手	はくしゅ	applaudissements	applause
+拡充	かくじゅう	développement, renforcement	expansion
+拡大	かくだい	agrandissement	enlargement
+拡張	かくちょう	extension	extension, expansion
+括弧	かっこ	parenthèses, crochets	brackets
+挿す	さす	insérer, planter	to insert
+授業	じゅぎょう	cours	class, lesson
+推薦	すいせん	recommandation	recommendation
+描く	えがく	dessiner, dépeindre	to draw, to depict
+描く	かく	dessiner, peindre	to draw, to paint
+揚げる	あげる	frire ; hisser	to fry; to raise
+握る	にぎる	saisir, serrer	to grasp
+握手	あくしゅ	poignée de main	handshake
+援助	えんじょ	aide, assistance	aid, support
+摩擦	まさつ	friction	friction
+撮る	とる	prendre (une photo), filmer	to take (a photo)
+撮影	さつえい	prise de vue, tournage	photography, filming
+攻める	せめる	attaquer	to attack
+攻撃	こうげき	attaque	attack
+教授	きょうじゅ	professeur (d'université)	professor
+敷く	しく	étendre, poser	to spread, to lay out
+敷地	しきち	terrain, site	site, premises
+文房具	ぶんぼうぐ	fournitures de bureau	stationery
+文献	ぶんけん	documentation, ouvrages	literature, references
+新鮮	しんせん	frais	fresh
+旗	はた	drapeau	flag
+既に	すでに	déjà	already
+日陰	ひかげ	ombre	shade
+暇	ひま	temps libre	free time
+暑い	あつい	chaud (temps)	hot (weather)
+暖まる	あたたまる	se réchauffer	to warm up
+暖める	あたためる	réchauffer	to warm, to heat
+暖房	だんぼう	chauffage	heating
+書斎	しょさい	bureau (pièce)	study (room)
+望遠鏡	ぼうえんきょう	télescope	telescope
+本棚	ほんだな	bibliothèque, étagère	bookshelf
+杉	すぎ	cèdre du Japon	Japanese cedar
+松	まつ	pin	pine
+架空	かくう	imaginaire, fictif	fictional, imaginary
+栓	せん	bouchon	stopper, cork
+校舎	こうしゃ	bâtiment scolaire	school building
+株	かぶ	action (en bourse)	share, stock
+桜	さくら	cerisier	cherry blossom
+梅	うめ	prunier	plum (tree)
+梅雨	つゆ	saison des pluies	rainy season
+梅雨	ばいう	saison des pluies	rainy season
+棚	たな	étagère	shelf
+機嫌	きげん	humeur	mood
+欄	らん	colonne, rubrique	column, section
+欠陥	けっかん	défaut	defect
+歌謡	かよう	chanson	song, ballad
+歓迎	かんげい	accueil, bienvenue	welcome
+殖える	ふえる	se multiplier	to increase, to multiply
+殖やす	ふやす	augmenter, multiplier	to increase
+殻	から	coquille, carapace	shell, husk
+比較	ひかく	comparaison	comparison
+比較的	ひかくてき	relativement	relatively
+氏	し	M. (nom de famille)	Mr. (surname)
+氏名	しめい	nom complet	full name
+民謡	みんよう	chanson folklorique	folk song
+汁	しる	jus ; soupe	juice; soup
+汽車	きしゃ	train à vapeur	steam train
+沖	おき	large (en mer)	offshore, open sea
+泡	あわ	bulle, mousse	bubble, foam
+泣く	なく	pleurer	to cry
+洗剤	せんざい	détergent, lessive	detergent
+活躍	かつやく	activité remarquable	active role, success
+浸ける	つける	tremper	to soak, to dip
+消耗	しょうもう	épuisement, consommation	exhaustion, consumption
+淡水	たんすい	eau douce	fresh water
+清潔	せいけつ	propre	clean
+渇く	かわく	avoir soif	to be thirsty
+渋滞	じゅうたい	embouteillage	traffic jam
+温暖	おんだん	doux, tempéré	warm, mild
+湧く	わく	jaillir	to gush out, to spring up
+滝	たき	cascade	waterfall
+演奏	えんそう	interprétation musicale	musical performance
+漫画	まんが	manga, bande dessinée	comic, manga
+漬ける	つける	mariner, tremper	to pickle, to soak
+漸く	ようやく	enfin	finally, at last
+澄む	すむ	devenir limpide	to become clear
+激しい	はげしい	violent, intense	intense, violent
+激増	げきぞう	forte hausse	sharp increase
+濁る	にごる	se troubler	to become muddy
+瀬戸物	せともの	porcelaine, vaisselle	china, crockery
+炊く	たく	cuire (le riz)	to cook (rice)
+炊事	すいじ	cuisine (préparer les repas)	cooking
+炎	ほのお	flamme	flame
+無沙汰	ぶさた	ne pas donner de nouvelles	not keeping in touch
+煩い	うるさい	bruyant, agaçant	noisy, annoying
+煮える	にえる	cuire, bouillir	to be boiled, to be cooked
+煮る	にる	faire cuire, mijoter	to boil, to simmer
+物価	ぶっか	prix (coût de la vie)	prices, cost of living
+物騒	ぶっそう	dangereux, peu sûr	dangerous, unsafe
+特殊	とくしゅ	spécial, particulier	special, unique
+狂う	くるう	devenir fou ; se dérégler	to go mad; to go wrong
+狭い	せまい	étroit	narrow, small
+献立	こんだて	menu	menu
+猿	さる	singe	monkey
+玄関	げんかん	entrée (de maison)	entrance hall
+琴	こと	koto (harpe japonaise)	koto (Japanese harp)
+環境	かんきょう	environnement	environment
+甚だしい	はなはだしい	extrême, excessif	extreme, excessive
+田舎	いなか	campagne	countryside
+症状	しょうじょう	symptôme	symptom
+癖	くせ	habitude, manie	habit, quirk
+発揮	はっき	faire preuve de, déployer	display, demonstration
+盆	ぼん	fête des morts (O-bon) ; plateau	Bon festival; tray
+盆地	ぼんち	bassin, cuvette	basin (valley)
+監督	かんとく	direction ; réalisateur	supervision; director
+直径	ちょっけい	diamètre	diameter
+相撲	すもう	sumo	sumo
+看板	かんばん	enseigne, panneau	signboard
+看病	かんびょう	soigner (un malade)	nursing (a patient)
+看護婦	かんごふ	infirmière	nurse
+真剣	しんけん	sérieux	serious, earnest
+眺め	ながめ	vue, panorama	view
+眺める	ながめる	contempler	to gaze at
+眼鏡	めがね	lunettes	glasses
+睡眠	すいみん	sommeil	sleep
+瞬間	しゅんかん	instant	moment, instant
+瞳	ひとみ	pupille	pupil (of the eye)
+矛盾	むじゅん	contradiction	contradiction
+砂漠	さばく	désert	desert
+砂糖	さとう	sucre	sugar
+砕く	くだく	briser, broyer	to break, to smash
+砕ける	くだける	se briser	to break, to be smashed
+碁	ご	go (jeu)	go (board game)
+礼儀	れいぎ	politesse, bonnes manières	manners, courtesy
+稀	まれ	rare	rare
+稲	いね	plant de riz	rice plant
+稼ぐ	かせぐ	gagner (de l'argent)	to earn
+穀物	こくもつ	céréales	grain, cereals
+穏やか	おだやか	calme, paisible	calm, gentle
+穴	あな	trou	hole
+笛	ふえ	flûte, sifflet	flute, whistle
+算盤	そろばん	boulier	abacus
+節	ふし	nœud ; air (mélodie)	joint, knot; melody
+節約	せつやく	économie	saving, economizing
+粗	あら	défaut	flaw, defect
+粗い	あらい	grossier, rugueux	coarse, rough
+粗末	そまつ	modeste, négligé	crude, humble
+系統	けいとう	système, lignée	system, lineage
+純粋	じゅんすい	pur	pure
+紙幣	しへい	billet de banque	banknote
+紫	むらさき	violet	purple
+紺	こん	bleu marine	navy blue
+絞る	しぼる	presser, essorer	to squeeze, to wring
+絹	きぬ	soie	silk
+維持	いじ	maintien	maintenance
+綱	つな	corde	rope
+緊張	きんちょう	tension, nervosité	tension, nervousness
+緯度	いど	latitude	latitude
+縄	なわ	corde	rope
+縛る	しばる	attacher, lier	to tie, to bind
+縦	たて	longueur, vertical	length, vertical
+縫う	ぬう	coudre	to sew
+繰り返す	くりかえす	répéter	to repeat
+羊毛	ようもう	laine	wool
+翻訳	ほんやく	traduction	translation
+翼	つばさ	aile	wing
+考慮	こうりょ	prise en compte	consideration
+胡椒	こしょう	poivre	pepper
+腐る	くさる	pourrir	to rot
+臨時	りんじ	temporaire, exceptionnel	temporary, special
+自慢	じまん	fierté, vantardise	pride, boasting
+臭い	くさい	qui sent mauvais	smelly
+舌	した	langue (organe)	tongue
+艶	つや	brillant, lustre	gloss, shine
+芝居	しばい	pièce de théâtre	play, drama
+芝生	しばふ	pelouse	lawn
+花嫁	はなよめ	mariée	bride
+芽	め	bourgeon, pousse	sprout, bud
+茂る	しげる	pousser dru	to grow thick
+草履	ぞうり	sandales japonaises	zori sandals
+葬式	そうしき	funérailles	funeral
+蒔く	まく	semer	to sow
+蒸し暑い	むしあつい	lourd, humide et chaud	hot and humid
+虎	とら	tigre	tiger
+虹	にじ	arc-en-ciel	rainbow
+蚊	か	moustique	mosquito
+蛇口	じゃぐち	robinet	tap, faucet
+蛍光灯	けいこうとう	tube fluorescent	fluorescent lamp
+行儀	ぎょうぎ	manières, tenue	manners
+衝突	しょうとつ	collision, conflit	collision, conflict
+裁縫	さいほう	couture	sewing
+裸	はだか	nu	naked
+褒める	ほめる	féliciter, louer	to praise
+要旨	ようし	résumé, idée principale	gist, summary
+覚悟	かくご	être prêt à, résolution	readiness, resolve
+解釈	かいしゃく	interprétation	interpretation
+記憶	きおく	mémoire, souvenir	memory
+評価	ひょうか	évaluation	evaluation
+詩	し	poème	poem
+詩人	しじん	poète	poet
+詳しい	くわしい	détaillé ; bien connaître	detailed; well-informed
+誓う	ちかう	jurer, faire le serment	to swear, to vow
+誕生	たんじょう	naissance	birth
+誕生日	たんじょうび	anniversaire	birthday
+調節	ちょうせつ	réglage	adjustment
+謙虚	けんきょ	modeste, humble	modest, humble
+謙遜	けんそん	modestie	modesty, humility
+譲る	ゆずる	céder, transmettre	to hand over, to give way
+豆	まめ	haricot, pois	beans, peas
+豚肉	ぶたにく	porc (viande)	pork
+豪華	ごうか	luxueux, somptueux	luxurious, gorgeous
+貢献	こうけん	contribution	contribution
+跳ねる	はねる	bondir, sauter	to jump, to bounce
+跳ぶ	とぶ	sauter	to jump, to leap
+踏む	ふむ	marcher sur	to step on
+踏切	ふみきり	passage à niveau	railway crossing
+車掌	しゃしょう	contrôleur (de train)	conductor
+軍隊	ぐんたい	armée	army, troops
+輝く	かがやく	briller	to shine
+透き通る	すきとおる	être transparent	to be transparent
+透明	とうめい	transparent	transparent
+逮捕	たいほ	arrestation	arrest
+逸れる	それる	dévier, s'écarter	to stray, to veer off
+過剰	かじょう	excès	excess
+道徳	どうとく	morale	morals
+遠慮	えんりょ	réserve, retenue	restraint, reserve
+遭う	あう	subir, rencontrer (un malheur)	to encounter (trouble)
+選択	せんたく	choix	choice, selection
+避ける	さける	éviter	to avoid
+郡	ぐん	district	district, county
+酌む	くむ	servir (le saké)	to pour (sake)
+酔う	よう	être ivre	to get drunk
+酔っ払い	よっぱらい	ivrogne	drunk person
+酢	す	vinaigre	vinegar
+醜い	みにくい	laid	ugly
+金銭	きんせん	argent	money
+鈴	すず	clochette	small bell
+鉄砲	てっぽう	fusil	gun
+鉛筆	えんぴつ	crayon	pencil
+鉢	はち	bol ; pot (de fleurs)	bowl; pot
+銃	じゅう	arme à feu	gun
+銘々	めいめい	chacun	each, individually
+鏡	かがみ	miroir	mirror
+鐘	かね	cloche	bell (temple)
+附属	ふぞく	rattaché, annexe	attached, affiliated
+陰	かげ	ombre ; derrière	shade; behind
+随分	ずいぶん	très, considérablement	very, considerably
+随筆	ずいひつ	essai (littéraire)	essay
+隠す	かくす	cacher	to hide
+隠れる	かくれる	se cacher	to hide (oneself)
+隣	となり	voisin, à côté	next door
+雰囲気	ふんいき	ambiance	atmosphere
+雷	かみなり	tonnerre	thunder
+需要	じゅよう	demande	demand
+霜	しも	givre	frost
+霧	きり	brouillard	fog
+面倒臭い	めんどうくさい	pénible, la flemme	tiresome, a pain
+響き	ひびき	écho, résonance	echo, sound
+響く	ひびく	résonner	to resound
+項目	こうもく	élément, rubrique	item, entry
+順序	じゅんじょ	ordre, séquence	order, sequence
+顕微鏡	けんびきょう	microscope	microscope
+風呂	ふろ	bain	bath
+風呂敷	ふろしき	furoshiki (tissu d'emballage)	wrapping cloth
+食卓	しょくたく	table à manger	dining table
+食糧	しょくりょう	vivres	food, provisions
+飢える	うえる	avoir faim, être affamé	to starve
+飢饉	ききん	famine	famine
+飼う	かう	élever (un animal)	to keep (a pet)
+飽きる	あきる	se lasser de	to get tired of
+飽くまで	あくまで	jusqu'au bout	to the end, persistently
+騒々しい	そうぞうしい	bruyant	noisy
+騒がしい	さわがしい	bruyant	noisy
+騒ぎ	さわぎ	tapage, agitation	commotion, uproar
+鬼	おに	démon, ogre	demon, ogre
+魅力	みりょく	charme	charm, appeal
+黙る	だまる	se taire	to be silent
